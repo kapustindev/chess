@@ -29,8 +29,16 @@ header {
     flex-direction: row-reverse;
 }
 
+.player:last-of-type > .player_name {
+    flex-direction: row-reverse;
+}
+
+
 .player_img {
     display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
     width: 50px;
     height: 50px;
     border-radius: 50px;
@@ -39,10 +47,15 @@ header {
 
 .player_name {
     display: flex;
+    justify-content: flex-start;
     width: 250px;
     height: 18px;
     border-radius: 8px;
     background-color: rgba(80, 80, 80, 0.15);
+}
+
+.active {
+    background-color: transparent;
 }
 
 .board {
@@ -60,4 +73,19 @@ header {
 
 .odd {
     background-color: rgba(80, 80, 80, 0.15);
+}
+
+.new_player {
+    display: flex;
+    position: absolute;
+    padding: 15px;
+    border-radius: 8px;
+    top: 50%;
+    right: 50%;
+    background-color: #FFF;
+    border: 1px solid gray;
+}
+
+.hide {
+    display: none;
 }
