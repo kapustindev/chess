@@ -1,3 +1,7 @@
+* {
+    box-sizing: border-box;
+}
+
 body {
     margin: 0;
     height: 100vh;
@@ -33,7 +37,6 @@ header {
     flex-direction: row-reverse;
 }
 
-
 .player_img {
     display: flex;
     justify-content: center;
@@ -45,20 +48,33 @@ header {
     background-color: rgba(80, 80, 80, 0.15);
 }
 
-.player_name {
-    display: flex;
-    justify-content: flex-start;
-    width: 250px;
-    height: 18px;
-    border-radius: 8px;
+.play_button {
+    border: none;
     background-color: rgba(80, 80, 80, 0.15);
+    border-radius: 8px;
+    padding: 6px 16px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.play_button:hover {
+    background-color: rgba(80, 80, 80, 0.3);
 }
 
 .active {
     background-color: transparent;
 }
 
+.game {
+    display: flex;
+    flex-direction: column;
+}
+
 .board {
+    display: flex;
+}
+
+.field {
     display: grid;
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(8, 1fr);
@@ -75,6 +91,39 @@ header {
     flex-grow: 0;
     width: 75px;
     height: 75px;
+}
+
+.rows {
+    display: flex;
+    flex-direction: column;
+}
+
+.alphabet {
+    display: flex;
+    background-color: rgba(80, 80, 80, 0.15);
+}
+
+.char {
+    display: flex;
+    justify-content: center;
+    width: 75px;
+}
+
+.row-number {
+    display: flex;
+    align-items: center;
+    padding: 6px;
+    height: 75px;
+    background-color: rgba(80, 80, 80, 0.15);
+}
+
+.target {
+    transition: all 0.3s;
+    box-shadow: inset 0 0 10px #f8a100;
+}
+
+.enemy {
+    box-shadow: inset 0 0 10px #f80000;
 }
 
 .black {

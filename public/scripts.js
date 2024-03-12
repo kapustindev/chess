@@ -23,12 +23,29 @@ socket.on('move', ({ start, end }) => {
 })
 
 function initBoard() {
-    const board = document.getElementById("board");
+    const board = document.getElementById("field");
+    const rows = document.querySelector(".rows");
+    const alpha = document.querySelector(".alphabet");
 
     let dragged;
     let draggedIdx;
 
     let isNewRow = false;
+
+
+    for (let i = 8; i > 0; i -= 1) {
+        const rowNumber = document.createElement("div");
+        rowNumber.textContent = String(i);
+        rowNumber.classList.add("row-number");
+        rows.appendChild(rowNumber);
+    }
+
+    for (let i = 0; i < 8; i += 1) {
+        const char = document.createElement("div");
+        char.textContent = String.fromCharCode(i + 65);
+        char.classList.add("char");
+        alpha.appendChild(char);
+    }
 
     for (let i = 0; i < 64; i += 1) {
         const cell = document.createElement("div");
@@ -119,8 +136,20 @@ function initBoard() {
             false,
         );
 
+        cell.addEventListener("dragenter", () => {
+            if (cell.getAttribute("id") !== draggedIdx) {
+                cell.classList.add("target");
+            }
+        })
+
+        cell.addEventListener("dragleave", () => {
+            cell.classList.remove("target");
+        })
+
         cell.addEventListener("drop", (e) => {
             e.preventDefault();
+
+            cell.classList.remove("target");
 
             makeMove(dragged, e.currentTarget);
 
@@ -136,7 +165,8 @@ function initBoard() {
     for (let idx = 0; idx < playerNames.length; idx += 1) {
         const node = playerNames[idx];
         const takePlaceButton = document.createElement("button");
-        takePlaceButton.innerText = "Take this place";
+        takePlaceButton.classList.add("play_button")
+        takePlaceButton.innerText = "Play as " + (idx === 0 ? "white" : "black");
         takePlaceButton.addEventListener('click', () => registerPlayer(idx + 1))
         node.append(takePlaceButton)
     }
@@ -175,9 +205,17 @@ function makeMove(piece, destination) {
 }
 
 function reverseBoard() {
-    const board = document.getElementById("board");
+    const board = document.getElementById("field");
     const pieces = document.querySelectorAll(".piece");
+    const rowsWrapper = document.querySelector(".rows");
+    const rows = document.querySelectorAll(".row-number");
+    const alpha = document.querySelector(".alphabet");
+    const chars = document.querySelectorAll(".char");
 
     pieces.forEach(piece => piece.classList.add("reversed"));
     board.classList.add("reversed");
+    rowsWrapper.classList.add("reversed");
+    rows.forEach(row => row.classList.add("reversed"));
+    alpha.classList.add("reversed");
+    chars.forEach(char => char.classList.add("reversed"));
 }
