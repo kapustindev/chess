@@ -26,6 +26,10 @@ io.on('connection', (socket) => {
         io.emit('registration', { name, idx, color: getRandomColor(0.15) });
     })
 
+    socket.on('move', ({ start, end }) => {
+        socket.broadcast.emit('move', {start, end})
+    })
+
     socket.on('disconnect', () => {
         activeUsers -= 1;
     })

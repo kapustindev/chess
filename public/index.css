@@ -64,14 +64,71 @@ header {
     grid-template-rows: repeat(8, 1fr);
 }
 
+.reversed {
+    transform: rotate(180deg);
+}
+
 .cell {
     display: flex;
+    justify-content: center;
+    align-items: center;
     flex-grow: 0;
     width: 75px;
     height: 75px;
 }
 
+.black {
+    background-color: #282828;
+}
+
+.white {
+    background-color: #FFFFFF;
+}
+
+.piece {
+    display: flex;
+    width: 60px;
+    height: 60px;
+    mask-size: cover;
+    cursor: grab;
+    border-bottom: 3px solid #282828;
+}
+
+.pawn {
+    -webkit-mask-image: url("./assets/pawn.svg");
+    mask-image: url("./assets/pawn.svg");
+}
+
+.rook {
+    -webkit-mask-image: url("./assets/rook.svg");
+    mask-image: url("./assets/rook.svg");
+}
+
+.knight {
+    -webkit-mask-image: url("./assets/knight.svg");
+    mask-image: url("./assets/knight.svg");
+}
+
+.bishop {
+    -webkit-mask-image: url("./assets/bishop.svg");
+    mask-image: url("./assets/bishop.svg");
+}
+
+.queen {
+    -webkit-mask-image: url("./assets/queen.svg");
+    mask-image: url("./assets/queen.svg");
+}
+
+.king {
+    -webkit-mask-image: url("./assets/king.svg");
+    mask-image: url("./assets/king.svg");
+}
+
 .odd {
+    background-color: rgba(80, 80, 80, 0.5);
+}
+
+.even {
     background-color: rgba(80, 80, 80, 0.15);
 }
 
