@@ -54,6 +54,7 @@ for (let i = 0; i < CELL_QTY; i += 1) {
     }
 }
 
+const game = new Game();
 initBoard();
 
 function initBoard() {
@@ -90,14 +91,20 @@ function initBoard() {
 
         piece.addEventListener("dragstart", (e) => {
             removeSpecialEffects();
+            dragged = e.target;
+            draggedIdx = dragged.parentNode.id;
+
+            const isPlayersPiece = abstractBoard[draggedIdx].getColor() === game.getPlayer();
+
+            if (!isPlayersPiece) {
+                alert("It's not your turn!");
+                return;
+            }
 
             abstractPiece.getMoves(abstractBoard).forEach((move) => {
                 const square = document.getElementById(move);
                 square.classList.add("possible");
             })
-
-            dragged = e.target;
-            draggedIdx = dragged.parentNode.id;
         })
 
         if (abstractPiece) {
@@ -145,6 +152,7 @@ function initBoard() {
                 abstractBoard[i] = draggedPiece;
 
                 makeMove(dragged, e.currentTarget);
+                game.endTurn();
 
                 socket.emit("move", ({ start: draggedIdx, end: i }))
             }
@@ -434,5 +442,26 @@ function Queen(color, position) {
             .concat(this._getVerticalMoves(board, 1))
             .concat(this._getHorizontalMoves(board, 1))
             .concat(this._getHorizontalMoves(board,-1));
+    }
+}
+
+function Game() {
+    this.status = "IN_PROGRESS";
+    this.player = "white"
+
+    this.getPlayer = function() {
+        return this.player;
+    }
+    this.setPlayer = function(opponent) {
+        this.player = opponent;
+    }
+    this.getStatus = function() {
+        return this.status;
+    }
+    this.setStatus = function(newStatus) {
+        this.status = newStatus;
+    }
+    this.endTurn = function() {
+        this.setPlayer(this.getPlayer() === "white" ? "black" : "white");
     }
 }
