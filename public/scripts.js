@@ -33,6 +33,14 @@ for (let i = 0; i < CELL_QTY; i += 1) {
         abstractBoard.push(new Rook("white", i))
     } else if (i === 0 || i === 7) {
         abstractBoard.push(new Rook("black", i))
+    } else if (i === 57 || i === 62) {
+        abstractBoard.push(new Knight("white", i))
+    } else if (i === 1 || i === 6) {
+        abstractBoard.push(new Knight("black", i))
+    } else if (i === 58 || i === 61) {
+        abstractBoard.push(new Bishop("white", i))
+    } else if (i === 2 || i === 5) {
+        abstractBoard.push(new Bishop("black", i))
     } else {
         abstractBoard.push(null);
     }
@@ -90,16 +98,7 @@ function initBoard() {
             cell.appendChild(piece);
         }
 
-        // if (i === 1 || i === 6) {
-        //     piece.classList.add("knight", "black");
-        //     cell.appendChild(piece);
-        // }
-        //
-        // if (i === 2 || i === 5) {
-        //     piece.classList.add("bishop", "black");
-        //     cell.appendChild(piece);
-        // }
-        //
+
         // if (i === 3) {
         //     piece.classList.add("queen", "black");
         //     cell.appendChild(piece);
@@ -109,16 +108,6 @@ function initBoard() {
         //     piece.classList.add("king", "black");
         //     cell.appendChild(piece);
         // }
-        // if (i === 57 || i === 62) {
-        //     piece.classList.add("knight", "white");
-        //     cell.appendChild(piece);
-        // }
-        //
-        // if (i === 58 || i === 61) {
-        //     piece.classList.add("bishop", "white");
-        //     cell.appendChild(piece);
-        // }
-        //
         // if (i === 59) {
         //     piece.classList.add("queen", "white");
         //     cell.appendChild(piece);
@@ -271,6 +260,39 @@ function Piece(color, position) {
         return (this.color === "white" && this.position > 47 && this.position < 56)
             || (this.color === "black" && this.position > 7 && this.position < 16);
     }
+
+    this._getDiagonalMoves = function(board, range = BOARD_SIZE) {
+        const moves = [];
+
+        const possibleDirections = [-7, 7, -9, 9]
+
+        possibleDirections.forEach(add => {
+            let move = this.position;
+            let directionRange = range;
+
+            if (((move + 1) % BOARD_SIZE === 0 && (add === -7 || add === 9))
+                || (move % BOARD_SIZE === 0 && (add === 7 || add === -9))) {
+                return;
+            }
+
+            move += add;
+
+            while (move >= 0 && move < CELL_QTY && directionRange > 0) {
+
+                if (board[move]) {
+                    if (board[move].getColor() !== this.getColor()) {
+                        moves.push(move);
+                    }
+                    break;
+                }
+                moves.push(move);
+                move += add;
+                directionRange -= 1;
+            }
+        })
+
+        return moves;
+    }
 }
 
 function Pawn(color, position) {
@@ -311,7 +333,7 @@ function Rook(color, position) {
         const getVerticalMoves = (direction) => {
             const moves = [];
 
-            for (let i = this.position + direction; direction === -1 ? i >= 0 : i < 64; i += direction) {
+            for (let i = this.position + direction; direction === -1 ? i >= 0 : i < CELL_QTY; i += direction) {
                 if (i % BOARD_SIZE === (this.position % BOARD_SIZE)) {
                     moves.push(i);
                 }
@@ -358,3 +380,40 @@ function Rook(color, position) {
     }
 }
 
+function Knight(color, position) {
+    Piece.call(this, color, position);
+    this.type = "knight";
+
+    // BUG WITH A/B OR G/H columns
+    this.getMoves = function (board) {
+        const moves = [];
+        const cellsToAdd = [6, 10, 15, 17];
+
+        for (const value of cellsToAdd) {
+            const twoMoves = [this.position + value, this.position - value];
+
+            twoMoves.forEach(move => {
+                if (move < 0 || move >= CELL_QTY) {
+                    return;
+                }
+
+                if (board[move] && board[move].getColor() === this.getColor()) {
+                    return;
+                }
+
+                moves.push(move);
+            })
+        }
+
+        return moves;
+    }
+}
+
+function Bishop(color, position) {
+    Piece.call(this, color, position);
+    this.type = "bishop";
+
+    this.getMoves = function(board) {
+        return this._getDiagonalMoves(board);
+    }
+}
