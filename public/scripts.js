@@ -73,7 +73,13 @@ function startNewGame() {
             const isPlayersPiece = board.getValueFromCell(draggedIdx).getColor() === game.getPlayer();
 
             if (!isPlayersPiece) {
-                alert("It's not your turn!");
+                e.preventDefault();
+
+                dragged.classList.add("invalid_move");
+                dragged.parentNode.onmouseleave = () => {
+                    dragged.classList.remove("invalid_move");
+                };
+
                 return;
             }
 
