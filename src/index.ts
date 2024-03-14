@@ -2,27 +2,27 @@ import { BOARD_SIZE, CELL_QTY, ASCII_A } from './constants';
 import Game from "./models/Game";
 import Board from "./models/Board";
 
-const socket = io();
+// const socket = io();
 
-socket.on('registration', ({ name, idx, color }) => {
-    const playerNode = document.getElementById(`player_${idx}`);
-    const [photoNode, nameNode] = playerNode.children;
-
-    photoNode.textContent = name[0].toUpperCase();
-    photoNode.style.backgroundColor = color;
-
-    nameNode.textContent = name;
-    nameNode.classList.add("active");
-});
-
-socket.on('move', ({ start, end }) => {
-    const cells = document.querySelectorAll(".cell");
-
-    const [piece] = cells[start].children;
-    const destination = cells[end];
-
-    makeMove(piece, destination);
-})
+// socket.on('registration', ({ name, idx, color }) => {
+//     const playerNode = document.getElementById(`player_${idx}`);
+//     const [photoNode, nameNode] = playerNode.children;
+//
+//     photoNode.textContent = name[0].toUpperCase();
+//     photoNode.style.backgroundColor = color;
+//
+//     nameNode.textContent = name;
+//     nameNode.classList.add("active");
+// });
+//
+// socket.on('move', ({ start, end }) => {
+//     const cells = document.querySelectorAll(".cell");
+//
+//     const [piece] = cells[start].children;
+//     const destination = cells[end];
+//
+//     makeMove(piece, destination);
+// })
 
 startNewGame();
 
@@ -32,13 +32,12 @@ function startNewGame() {
 
     board.initBoard();
 
-    const gameField = document.getElementById("field");
-    const rows = document.querySelector(".rows");
-    const alpha = document.querySelector(".alphabet");
+    const gameField = document.getElementById("field")!;
+    const rows = document.querySelector<HTMLDivElement>(".rows")!;
+    const alpha = document.querySelector<HTMLDivElement>(".alphabet")!;
 
-    let dragged;
-    let draggedIdx;
-    let moveCounter = 1;
+    let dragged: HTMLDivElement;
+    let draggedIdx: string;
 
     let isNewRow = false;
 
@@ -62,35 +61,40 @@ function startNewGame() {
         const piece = document.createElement("div");
         const abstractPiece = board.getValueFromCell(i);
 
-        piece.setAttribute("draggable", "true");
-
-        piece.addEventListener("dragstart", (e) => {
-            removeSpecialEffects();
-            dragged = e.target;
-            draggedIdx = dragged.parentNode.id;
-
-            const isPlayersPiece = board.getValueFromCell(draggedIdx).getColor() === game.getPlayer();
-
-            if (!isPlayersPiece) {
-                e.preventDefault();
-
-                dragged.classList.add("invalid_move");
-                dragged.parentNode.onmouseleave = () => {
-                    dragged.classList.remove("invalid_move");
-                };
-
-                return;
-            }
-
-            abstractPiece.getMoves(board).forEach((move) => {
-                const square = document.getElementById(move);
-                square.classList.add("possible");
-            })
-        })
-
         if (abstractPiece) {
             piece.classList.add("piece", abstractPiece.getType(), abstractPiece.getColor());
+
+            piece.setAttribute("draggable", "true");
             cell.appendChild(piece);
+
+            piece.addEventListener("dragstart", (e) => {
+                removeSpecialEffects();
+                dragged = e.target as HTMLDivElement;
+                if (dragged.parentNode) {
+
+                    // @ts-expect-error
+                    draggedIdx = dragged.parentNode.id;
+
+                    const piece = board.getValueFromCell(+draggedIdx);
+
+                    const isPlayersPiece = piece?.getColor() === game.getPlayer();
+
+                    if (!isPlayersPiece) {
+                        e.preventDefault();
+
+                        dragged.classList.add("invalid_move");
+                        dragged.parentNode.addEventListener("onmouseleave", () => {
+                            dragged.classList.remove("invalid_move");
+                        })
+                        return;
+                    }
+                }
+
+                abstractPiece.getMoves(board).forEach((move) => {
+                    const square = document.getElementById(String(move))!;
+                    square.classList.add("possible");
+                })
+            })
         }
 
         if (i % 8 === 0) {
@@ -124,9 +128,9 @@ function startNewGame() {
             cell.classList.remove("target");
             removeSpecialEffects();
 
-            const draggedPiece = board.getValueFromCell(draggedIdx);
+            const draggedPiece = board.getValueFromCell(+draggedIdx);
 
-            if (draggedPiece.getMoves(board).includes(i)) {
+            if (draggedPiece && draggedPiece.getMoves(board).includes(i)) {
                 const startCell = board.convertToAlgebraicNotation(draggedPiece.getPosition());
                 const destinationCell = board.convertToAlgebraicNotation(i);
                 const hasEnemy = board.getValueFromCell(i);
@@ -134,24 +138,25 @@ function startNewGame() {
                 board.setValueToCell(draggedPiece.getPosition(), null);
                 board.setValueToCell(i, draggedPiece);
 
+                // @ts-expect-error TODO
                 makeMove(dragged, e.currentTarget);
-                const movesTable = document.querySelector(".moves");
+                const movesTable = document.querySelector<HTMLDivElement>(".moves")!;
                 const move = document.createElement("div");
                 move.classList.add("move");
                 move.textContent = `${startCell} ${hasEnemy ? "#" : "->"} ${destinationCell}`;
 
-                if (moveCounter % 2) {
+                if (game.getMove() % 2) {
                     const moveLineNumber = document.createElement("div");
                     moveLineNumber.classList.add("move_counter");
-                    moveLineNumber.textContent = `${Math.ceil(moveCounter / 2)}.`;
+                    moveLineNumber.textContent = `${Math.ceil(game.getMove() / 2)}.`;
                     movesTable.appendChild(moveLineNumber);
                 }
-                moveCounter += 1;
+                game.incMove();
 
                 movesTable.appendChild(move);
                 game.endTurn();
 
-                socket.emit("move", ({ start: draggedIdx, end: i }))
+                // socket.emit("move", ({ start: draggedIdx, end: i }))
             }
         })
 
@@ -170,7 +175,7 @@ function startNewGame() {
     }
 }
 
-function registerPlayer(idx) {
+function registerPlayer(idx: number) {
     const modal = document.createElement("div");
     modal.classList.add("new_player");
 
@@ -179,7 +184,7 @@ function registerPlayer(idx) {
     button.innerText = "Register";
 
     button.addEventListener("click", () => {
-        socket.emit("registration", { name: input.value, idx });
+        // socket.emit("registration", { name: input.value, idx });
         modal.classList.add("hide");
 
         if (idx === 2) {
@@ -191,24 +196,26 @@ function registerPlayer(idx) {
     modal.appendChild(button);
     const body = document.querySelector("body");
 
-    body.appendChild(modal)
+    if (body) {
+        body.appendChild(modal)
+    }
 }
 
-function makeMove(piece, destination) {
+function makeMove(piece: HTMLDivElement, destination: HTMLDivElement) {
     if (destination.hasChildNodes()) {
-        destination.innerHTML = null;
+        destination.innerHTML = "";
     }
 
     destination.appendChild(piece);
 }
 
 function reverseBoard() {
-    const gameField = document.getElementById("field");
-    const pieces = document.querySelectorAll(".piece");
-    const rowsWrapper = document.querySelector(".rows");
-    const rows = document.querySelectorAll(".row-number");
-    const alpha = document.querySelector(".alphabet");
-    const chars = document.querySelectorAll(".char");
+    const gameField = document.getElementById("field")!;
+    const pieces = document.querySelectorAll<HTMLDivElement>(".piece")!;
+    const rowsWrapper = document.querySelector<HTMLDivElement>(".rows")!;
+    const rows = document.querySelectorAll<HTMLDivElement>(".row-number");
+    const alpha = document.querySelector<HTMLDivElement>(".alphabet")!;
+    const chars = document.querySelectorAll<HTMLDivElement>(".char");
 
     pieces.forEach(piece => piece.classList.add("reversed"));
     gameField.classList.add("reversed");
@@ -219,6 +226,6 @@ function reverseBoard() {
 }
 
 function removeSpecialEffects() {
-    const allCells = document.querySelectorAll(".cell");
+    const allCells = document.querySelectorAll<HTMLDivElement>(".cell");
     allCells.forEach(cell => cell.classList.remove("possible"));
 }

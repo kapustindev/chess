@@ -13,7 +13,7 @@ class Board {
         return this.board[cell];
     }
 
-    setValueToCell(cell: number, val: Piece) {
+    setValueToCell(cell: number, val: Maybe<Piece>) {
         if (val) {
             val.setPosition(cell);
         }

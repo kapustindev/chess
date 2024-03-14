@@ -1,12 +1,14 @@
 import { EPlayer, GameStatus } from "./types";
 
 class Game {
-    status: GameStatus
-    player: EPlayer
+    status: GameStatus;
+    player: EPlayer;
+    move: number;
 
     constructor() {
         this.status = "IN_PROGRESS";
         this.player = EPlayer.White
+        this.move = 1
     }
 
     getPlayer() {
@@ -14,6 +16,12 @@ class Game {
     }
     setPlayer(opponent: EPlayer) {
         this.player = opponent;
+    }
+    getMove() {
+        return this.move;
+    }
+    incMove() {
+        this.move += 1;
     }
     getStatus() {
         return this.status;

@@ -34,6 +34,10 @@ export class Piece {
             || (this.color === "black" && this.position > 7 && this.position < 16);
     }
 
+    getMoves(board: Board): number[] {
+        return [];
+    }
+
     _getHorizontalMoves = (board: Board, direction: EDirection, range = BOARD_SIZE) => {
         const moves: number[] = [];
 
