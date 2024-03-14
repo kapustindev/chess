@@ -1,6 +1,8 @@
 const BOARD_SIZE = 8;
 const CELL_QTY = BOARD_SIZE * BOARD_SIZE;
 
+const ASCII_A = 65;
+
 const socket = io();
 
 socket.on('registration', ({ name, idx, color }) => {
@@ -55,6 +57,7 @@ for (let i = 0; i < CELL_QTY; i += 1) {
 }
 
 const game = new Game();
+const gameBoard = new Board();
 initBoard();
 
 function initBoard() {
@@ -64,6 +67,7 @@ function initBoard() {
 
     let dragged;
     let draggedIdx;
+    let counter = 1;
 
     let isNewRow = false;
 
@@ -76,7 +80,7 @@ function initBoard() {
 
     for (let i = 0; i < BOARD_SIZE; i += 1) {
         const char = document.createElement("div");
-        char.textContent = String.fromCharCode(i + 65);
+        char.textContent = String.fromCharCode(i + ASCII_A);
         char.classList.add("char");
         alpha.appendChild(char);
     }
@@ -147,11 +151,29 @@ function initBoard() {
             const draggedPiece = abstractBoard[draggedIdx];
 
             if (draggedPiece.getMoves(abstractBoard).includes(i)) {
+                const startCell = gameBoard.convertToAlgebraicNotation(draggedPiece.getPosition());
+                const destinationCell = gameBoard.convertToAlgebraicNotation(i);
+                const hasEnemy = abstractBoard[i];
+
                 abstractBoard[draggedPiece.getPosition()] = null;
                 draggedPiece.setPosition(i);
                 abstractBoard[i] = draggedPiece;
 
                 makeMove(dragged, e.currentTarget);
+                const movesTable = document.querySelector(".moves");
+                const move = document.createElement("div");
+                move.classList.add("move");
+                move.textContent = `${startCell} ${hasEnemy ? "#" : "->"} ${destinationCell}`;
+
+                if (counter % 2) {
+                    const moveLineNumber = document.createElement("div");
+                    moveLineNumber.classList.add("move_counter");
+                    moveLineNumber.textContent = `${Math.ceil(counter / 2)}.`;
+                    movesTable.appendChild(moveLineNumber);
+                }
+                counter += 1;
+
+                movesTable.appendChild(move);
                 game.endTurn();
 
                 socket.emit("move", ({ start: draggedIdx, end: i }))
@@ -463,5 +485,14 @@ function Game() {
     }
     this.endTurn = function() {
         this.setPlayer(this.getPlayer() === "white" ? "black" : "white");
+    }
+}
+
+function Board() {
+    this.convertToAlgebraicNotation = function(idx) {
+        const letter = idx % BOARD_SIZE;
+        const number = BOARD_SIZE - Math.floor(idx / BOARD_SIZE);
+
+        return String.fromCharCode(letter + ASCII_A) + number;
     }
 }

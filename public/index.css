@@ -194,3 +194,24 @@ header {
 .hide {
     display: none;
 }
+
+.moves {
+    display: flex;
+    flex-wrap: wrap;
+    width: 315px;
+    background-color: rgba(80, 80, 80, 0.05);
+}
+
+.move {
+    display: flex;
+    justify-content: flex-start;
+    width: 150px;
+    padding: 6px 8px;
+}
+
+.move_counter {
+    display: flex;
+    width: 15px;
+    justify-content: center;
+    align-items: center;
+}
