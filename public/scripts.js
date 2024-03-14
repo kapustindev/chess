@@ -25,49 +25,21 @@ socket.on('move', ({ start, end }) => {
     makeMove(piece, destination);
 })
 
-const abstractBoard = [];
-for (let i = 0; i < CELL_QTY; i += 1) {
-    if (i > 47 && i < 56) {
-        abstractBoard.push(new Pawn("white", i))
-    } else if (i > 7 && i < 16) {
-        abstractBoard.push(new Pawn("black", i))
-    } else if (i === 56 || i === 63) {
-        abstractBoard.push(new Rook("white", i))
-    } else if (i === 0 || i === 7) {
-        abstractBoard.push(new Rook("black", i))
-    } else if (i === 57 || i === 62) {
-        abstractBoard.push(new Knight("white", i))
-    } else if (i === 1 || i === 6) {
-        abstractBoard.push(new Knight("black", i))
-    } else if (i === 58 || i === 61) {
-        abstractBoard.push(new Bishop("white", i))
-    } else if (i === 2 || i === 5) {
-        abstractBoard.push(new Bishop("black", i))
-    } else if (i === 60) {
-        abstractBoard.push(new King("white", i))
-    } else if (i === 4) {
-        abstractBoard.push(new King("black", i))
-    } else if (i === 59) {
-        abstractBoard.push(new Queen("white", i))
-    } else if (i === 3) {
-        abstractBoard.push(new Queen("black", i))
-    } else {
-        abstractBoard.push(null);
-    }
-}
+startNewGame();
 
-const game = new Game();
-const gameBoard = new Board();
-initBoard();
+function startNewGame() {
+    const game = new Game();
+    const board = new Board();
 
-function initBoard() {
-    const board = document.getElementById("field");
+    board.initBoard();
+
+    const gameField = document.getElementById("field");
     const rows = document.querySelector(".rows");
     const alpha = document.querySelector(".alphabet");
 
     let dragged;
     let draggedIdx;
-    let counter = 1;
+    let moveCounter = 1;
 
     let isNewRow = false;
 
@@ -89,7 +61,7 @@ function initBoard() {
         const cell = document.createElement("div");
         cell.setAttribute("id", String(i));
         const piece = document.createElement("div");
-        const abstractPiece = abstractBoard[i];
+        const abstractPiece = board.getValueFromCell(i);
 
         piece.setAttribute("draggable", "true");
 
@@ -98,14 +70,14 @@ function initBoard() {
             dragged = e.target;
             draggedIdx = dragged.parentNode.id;
 
-            const isPlayersPiece = abstractBoard[draggedIdx].getColor() === game.getPlayer();
+            const isPlayersPiece = board.getValueFromCell(draggedIdx).getColor() === game.getPlayer();
 
             if (!isPlayersPiece) {
                 alert("It's not your turn!");
                 return;
             }
 
-            abstractPiece.getMoves(abstractBoard).forEach((move) => {
+            abstractPiece.getMoves(board).forEach((move) => {
                 const square = document.getElementById(move);
                 square.classList.add("possible");
             })
@@ -147,17 +119,15 @@ function initBoard() {
             cell.classList.remove("target");
             removeSpecialEffects();
 
-            // set new position
-            const draggedPiece = abstractBoard[draggedIdx];
+            const draggedPiece = board.getValueFromCell(draggedIdx);
 
-            if (draggedPiece.getMoves(abstractBoard).includes(i)) {
-                const startCell = gameBoard.convertToAlgebraicNotation(draggedPiece.getPosition());
-                const destinationCell = gameBoard.convertToAlgebraicNotation(i);
-                const hasEnemy = abstractBoard[i];
+            if (draggedPiece.getMoves(board).includes(i)) {
+                const startCell = board.convertToAlgebraicNotation(draggedPiece.getPosition());
+                const destinationCell = board.convertToAlgebraicNotation(i);
+                const hasEnemy = board.getValueFromCell(i);
 
-                abstractBoard[draggedPiece.getPosition()] = null;
-                draggedPiece.setPosition(i);
-                abstractBoard[i] = draggedPiece;
+                board.setValueToCell(draggedPiece.getPosition(), null);
+                board.setValueToCell(i, draggedPiece);
 
                 makeMove(dragged, e.currentTarget);
                 const movesTable = document.querySelector(".moves");
@@ -165,13 +135,13 @@ function initBoard() {
                 move.classList.add("move");
                 move.textContent = `${startCell} ${hasEnemy ? "#" : "->"} ${destinationCell}`;
 
-                if (counter % 2) {
+                if (moveCounter % 2) {
                     const moveLineNumber = document.createElement("div");
                     moveLineNumber.classList.add("move_counter");
-                    moveLineNumber.textContent = `${Math.ceil(counter / 2)}.`;
+                    moveLineNumber.textContent = `${Math.ceil(moveCounter / 2)}.`;
                     movesTable.appendChild(moveLineNumber);
                 }
-                counter += 1;
+                moveCounter += 1;
 
                 movesTable.appendChild(move);
                 game.endTurn();
@@ -180,8 +150,7 @@ function initBoard() {
             }
         })
 
-
-        board.appendChild(cell);
+        gameField.appendChild(cell);
     }
 
     const playerNames = document.querySelectorAll(".player_name");
@@ -229,7 +198,7 @@ function makeMove(piece, destination) {
 }
 
 function reverseBoard() {
-    const board = document.getElementById("field");
+    const gameField = document.getElementById("field");
     const pieces = document.querySelectorAll(".piece");
     const rowsWrapper = document.querySelector(".rows");
     const rows = document.querySelectorAll(".row-number");
@@ -237,7 +206,7 @@ function reverseBoard() {
     const chars = document.querySelectorAll(".char");
 
     pieces.forEach(piece => piece.classList.add("reversed"));
-    board.classList.add("reversed");
+    gameField.classList.add("reversed");
     rowsWrapper.classList.add("reversed");
     rows.forEach(row => row.classList.add("reversed"));
     alpha.classList.add("reversed");
@@ -250,7 +219,6 @@ function removeSpecialEffects() {
 }
 
 // Class definitions
-
 function Piece(color, position) {
     this.color = color;
     this.position = position;
@@ -288,8 +256,8 @@ function Piece(color, position) {
         let move = this.position + direction;
 
         while ((direction === 1 ? move % BOARD_SIZE : (move + 1) % BOARD_SIZE) && move >= 0 && move < CELL_QTY && range > 0) {
-            if (board[move]) {
-                if (board[move].getColor() !== this.getColor()) {
+            if (board.getValueFromCell(move)) {
+                if (board.getValueFromCell(move).getColor() !== this.getColor()) {
                     moves.push(move);
                 }
                 break;
@@ -317,7 +285,7 @@ function Piece(color, position) {
 
             range -= 1;
         }
-        const pieceInThePath = moves.find(move => board[move]);
+        const pieceInThePath = moves.find(move => board.getValueFromCell(move));
 
         if (!pieceInThePath) {
             return moves;
@@ -325,7 +293,7 @@ function Piece(color, position) {
 
         const pieceIdx = moves.indexOf(pieceInThePath);
 
-        return moves.slice(0, board[pieceInThePath].getColor() !== this.color ? pieceIdx + 1 : pieceIdx);
+        return moves.slice(0, board.getValueFromCell(pieceInThePath).getColor() !== this.color ? pieceIdx + 1 : pieceIdx);
     }
 
     this._getDiagonalMoves = function(board, range = BOARD_SIZE) {
@@ -346,8 +314,8 @@ function Piece(color, position) {
 
             while (move >= 0 && move < CELL_QTY && directionRange > 0) {
 
-                if (board[move]) {
-                    if (board[move].getColor() !== this.getColor()) {
+                if (board.getValueFromCell(move)) {
+                    if (board.getValueFromCell(move).getColor() !== this.getColor()) {
                         moves.push(move);
                     }
                     break;
@@ -374,15 +342,15 @@ function Pawn(color, position) {
             verticalMoves.push(this.position - (16 * this.direction));
         }
 
-        const pieceInThePath = verticalMoves.find(move => board[move]);
+        const pieceInThePath = verticalMoves.find(move => board.getValueFromCell(move));
 
         const correctVerticalMoves = verticalMoves.slice(pieceInThePath);
 
         const diagonalMoves = [this.position - (7 * this.direction), this.position - (9 * this.direction)];
 
         const correctDiagonalMoves = diagonalMoves.filter(move => {
-            if (board[move]) {
-                return board[move].getColor() !== this.getColor();
+            if (board.getValueFromCell(move)) {
+                return board.getValueFromCell(move).getColor() !== this.getColor();
             }
             return false;
         })
@@ -395,7 +363,7 @@ function Rook(color, position) {
     Piece.call(this, color, position);
     this.type = "rook";
 
-    this.getMoves = function (board) {
+    this.getMoves = function(board) {
         return this._getVerticalMoves(board, -1)
             .concat(this._getVerticalMoves(board, 1))
             .concat(this._getHorizontalMoves(board, 1))
@@ -420,7 +388,9 @@ function Knight(color, position) {
                     return;
                 }
 
-                if (board[move] && board[move].getColor() === this.getColor()) {
+                const piece = board.getValueFromCell(move)
+
+                if (piece && piece.getColor() === this.getColor()) {
                     return;
                 }
 
@@ -489,6 +459,51 @@ function Game() {
 }
 
 function Board() {
+    this.board = [];
+
+    this.getValueFromCell = function(cell) {
+        return this.board[cell];
+    }
+
+    this.setValueToCell = function(cell, val) {
+        if (val) {
+            val.setPosition(cell);
+        }
+        this.board[cell] = val;
+    }
+
+    this.initBoard = function() {
+        for (let i = 0; i < CELL_QTY; i += 1) {
+            if (i > 47 && i < 56) {
+                this.board.push(new Pawn("white", i))
+            } else if (i > 7 && i < 16) {
+                this.board.push(new Pawn("black", i))
+            } else if (i === 56 || i === 63) {
+                this.board.push(new Rook("white", i))
+            } else if (i === 0 || i === 7) {
+                this.board.push(new Rook("black", i))
+            } else if (i === 57 || i === 62) {
+                this.board.push(new Knight("white", i))
+            } else if (i === 1 || i === 6) {
+                this.board.push(new Knight("black", i))
+            } else if (i === 58 || i === 61) {
+                this.board.push(new Bishop("white", i))
+            } else if (i === 2 || i === 5) {
+                this.board.push(new Bishop("black", i))
+            } else if (i === 60) {
+                this.board.push(new King("white", i))
+            } else if (i === 4) {
+                this.board.push(new King("black", i))
+            } else if (i === 59) {
+                this.board.push(new Queen("white", i))
+            } else if (i === 3) {
+                this.board.push(new Queen("black", i))
+            } else {
+                this.board.push(null);
+            }
+        }
+    }
+
     this.convertToAlgebraicNotation = function(idx) {
         const letter = idx % BOARD_SIZE;
         const number = BOARD_SIZE - Math.floor(idx / BOARD_SIZE);
