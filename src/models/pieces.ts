@@ -1,46 +1,54 @@
 import {BOARD_SIZE, CELL_QTY} from "../constants";
+import {EDirection, EPlayer, UPiece} from "./types";
+import Board from "./Board";
 
-class Piece {
-    constructor(color, position) {
+export class Piece {
+    color: EPlayer;
+    position: number;
+    type: UPiece
+
+    constructor(color: EPlayer, position: number) {
         this.color = color;
         this.position = position;
         this.type = "piece";
     }
 
-    getColor = function () {
+    getColor() {
         return this.color;
     }
 
-    getPosition = function () {
+    getPosition() {
         return this.position;
     }
 
-    setPosition = function (pos) {
+    setPosition(pos: number) {
         this.position = pos;
     }
 
-    getType = function () {
+    getType() {
         return this.type;
     }
 
-    isHomeRank = function() {
+    isHomeRank() {
         return (this.color === "white" && this.position > 47 && this.position < 56)
             || (this.color === "black" && this.position > 7 && this.position < 16);
     }
 
-    _getHorizontalMoves = (board, direction, range = BOARD_SIZE) => {
-        const moves = [];
+    _getHorizontalMoves = (board: Board, direction: EDirection, range = BOARD_SIZE) => {
+        const moves: number[] = [];
 
-        if (((this.position + 1) % BOARD_SIZE === 0 && direction === 1)
-            || (this.position % BOARD_SIZE === 0 && direction === -1)) {
+        if (((this.position + 1) % BOARD_SIZE === 0 && direction === EDirection.Positive)
+            || (this.position % BOARD_SIZE === 0 && direction === EDirection.Negative)) {
             return moves;
         }
 
         let move = this.position + direction;
 
-        while ((direction === 1 ? move % BOARD_SIZE : (move + 1) % BOARD_SIZE) && move >= 0 && move < CELL_QTY && range > 0) {
-            if (board.getValueFromCell(move)) {
-                if (board.getValueFromCell(move).getColor() !== this.getColor()) {
+        while ((direction === EDirection.Positive ? move % BOARD_SIZE : (move + 1) % BOARD_SIZE) && move >= 0 && move < CELL_QTY && range > 0) {
+            const piece = board.getValueFromCell(move);
+
+            if (piece) {
+                if (piece.getColor() !== this.getColor()) {
                     moves.push(move);
                 }
                 break;
@@ -53,11 +61,11 @@ class Piece {
         return moves;
     }
 
-    _getVerticalMoves = (board, direction, range = BOARD_SIZE) => {
-        const moves = [];
+    _getVerticalMoves = (board: Board, direction: EDirection, range = BOARD_SIZE) => {
+        const moves: number[] = [];
         const step = direction * BOARD_SIZE;
 
-        for (let i = this.position + step; direction === -1 ? i >= 0 : i < CELL_QTY; i += step) {
+        for (let i = this.position + step; direction === EDirection.Negative ? i >= 0 : i < CELL_QTY; i += step) {
             if (range <= 0) {
                 break;
             }
@@ -68,19 +76,23 @@ class Piece {
 
             range -= 1;
         }
-        const pieceInThePath = moves.find(move => board.getValueFromCell(move));
+        const pieceInThePathIdx = moves.find(move => board.getValueFromCell(move));
 
-        if (!pieceInThePath) {
-            return moves;
+        if (pieceInThePathIdx !== undefined) {
+            const pieceInThePath = board.getValueFromCell(pieceInThePathIdx);
+
+            if (pieceInThePath) {
+                const pieceIdx = moves.indexOf(pieceInThePathIdx);
+                return moves.slice(0, pieceInThePath.getColor() !== this.color ? pieceIdx + 1 : pieceIdx);
+            }
         }
 
-        const pieceIdx = moves.indexOf(pieceInThePath);
+        return moves;
 
-        return moves.slice(0, board.getValueFromCell(pieceInThePath).getColor() !== this.color ? pieceIdx + 1 : pieceIdx);
     }
 
-    _getDiagonalMoves = function(board, range = BOARD_SIZE) {
-        const moves = [];
+    _getDiagonalMoves = (board: Board, range = BOARD_SIZE) => {
+        const moves: number[] = [];
 
         const possibleDirections = [-7, 7, -9, 9]
 
@@ -96,9 +108,10 @@ class Piece {
             move += add;
 
             while (move >= 0 && move < CELL_QTY && directionRange > 0) {
+                const piece = board.getValueFromCell(move)
 
-                if (board.getValueFromCell(move)) {
-                    if (board.getValueFromCell(move).getColor() !== this.getColor()) {
+                if (piece) {
+                    if (piece.getColor() !== this.getColor()) {
                         moves.push(move);
                     }
                     break;
@@ -114,13 +127,15 @@ class Piece {
 }
 
 export class Pawn extends Piece {
-    constructor(color, position) {
+    direction: EDirection
+
+    constructor(color: EPlayer, position: number) {
         super(color, position);
         this.type = "pawn";
-        this.direction = color === "white" ? 1 : -1;
+        this.direction = color === EPlayer.White ? EDirection.Positive : EDirection.Negative;
     }
 
-    getMoves = function (board) {
+    getMoves(board: Board) {
         const verticalMoves = [this.position - (8 * this.direction)];
 
         if (this.isHomeRank()) {
@@ -134,8 +149,10 @@ export class Pawn extends Piece {
         const diagonalMoves = [this.position - (7 * this.direction), this.position - (9 * this.direction)];
 
         const correctDiagonalMoves = diagonalMoves.filter(move => {
-            if (board.getValueFromCell(move)) {
-                return board.getValueFromCell(move).getColor() !== this.getColor();
+            const piece = board.getValueFromCell(move);
+
+            if (piece) {
+                return piece.getColor() !== this.getColor();
             }
             return false;
         })
@@ -145,12 +162,12 @@ export class Pawn extends Piece {
 }
 
 export class Rook extends Piece {
-    constructor(color, position) {
+    constructor(color: EPlayer, position: number) {
         super(color, position);
         this.type = "rook";
     }
 
-    getMoves = function(board) {
+    getMoves(board: Board) {
         return this._getVerticalMoves(board, -1)
             .concat(this._getVerticalMoves(board, 1))
             .concat(this._getHorizontalMoves(board, 1))
@@ -159,14 +176,14 @@ export class Rook extends Piece {
 }
 
 export class Knight extends Piece {
-    constructor(color, position) {
+    constructor(color: EPlayer, position: number) {
         super(color, position);
         this.type = "knight";
     }
 
     // BUG WITH A/B OR G/H columns
-    getMoves = function (board) {
-        const moves = [];
+    getMoves(board: Board) {
+        const moves: number[] = [];
         const cellsToAdd = [6, 10, 15, 17];
 
         for (const value of cellsToAdd) {
@@ -192,23 +209,23 @@ export class Knight extends Piece {
 }
 
 export class Bishop extends Piece {
-    constructor(color, position) {
+    constructor(color: EPlayer, position: number) {
         super(color, position);
         this.type = "bishop";
     }
 
-    getMoves = function(board) {
+    getMoves(board: Board) {
         return this._getDiagonalMoves(board);
     }
 }
 
 export class King extends Piece {
-    constructor(color, position) {
+    constructor(color: EPlayer, position: number) {
         super(color, position);
         this.type = "king";
     }
 
-    getMoves = function(board) {
+    getMoves(board: Board) {
         return this._getDiagonalMoves(board, 1)
             .concat(this._getVerticalMoves(board, -1, 1))
             .concat(this._getVerticalMoves(board, 1, 1))
@@ -218,12 +235,12 @@ export class King extends Piece {
 }
 
 export class Queen extends Piece {
-    constructor(color, position) {
+    constructor(color: EPlayer, position: number) {
         super(color, position);
         this.type = "queen";
     }
 
-    getMoves = function(board) {
+    getMoves(board: Board) {
         return this._getDiagonalMoves(board)
             .concat(this._getVerticalMoves(board, -1))
             .concat(this._getVerticalMoves(board, 1))
