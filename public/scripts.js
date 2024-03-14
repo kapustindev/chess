@@ -1,4 +1,5 @@
 const BOARD_SIZE = 8;
+const CELL_QTY = BOARD_SIZE * BOARD_SIZE;
 
 const socket = io();
 
@@ -23,11 +24,15 @@ socket.on('move', ({ start, end }) => {
 })
 
 const abstractBoard = [];
-for (let i = 0; i < BOARD_SIZE * BOARD_SIZE; i += 1) {
+for (let i = 0; i < CELL_QTY; i += 1) {
     if (i > 47 && i < 56) {
         abstractBoard.push(new Pawn("white", i))
     } else if (i > 7 && i < 16) {
         abstractBoard.push(new Pawn("black", i))
+    } else if (i === 56 || i === 63) {
+        abstractBoard.push(new Rook("white", i))
+    } else if (i === 0 || i === 7) {
+        abstractBoard.push(new Rook("black", i))
     } else {
         abstractBoard.push(null);
     }
@@ -60,7 +65,7 @@ function initBoard() {
         alpha.appendChild(char);
     }
 
-    for (let i = 0; i < BOARD_SIZE * BOARD_SIZE; i += 1) {
+    for (let i = 0; i < CELL_QTY; i += 1) {
         const cell = document.createElement("div");
         cell.setAttribute("id", String(i));
         const piece = document.createElement("div");
@@ -85,11 +90,6 @@ function initBoard() {
             cell.appendChild(piece);
         }
 
-        // if (i === 0 || i === 7) {
-        //     piece.classList.add("rook", "black");
-        //     cell.appendChild(piece);
-        // }
-        //
         // if (i === 1 || i === 6) {
         //     piece.classList.add("knight", "black");
         //     cell.appendChild(piece);
@@ -109,13 +109,6 @@ function initBoard() {
         //     piece.classList.add("king", "black");
         //     cell.appendChild(piece);
         // }
-        //
-        //
-        // if (i === 56 || i === 63) {
-        //     piece.classList.add("rook", "white");
-        //     cell.appendChild(piece);
-        // }
-        //
         // if (i === 57 || i === 62) {
         //     piece.classList.add("knight", "white");
         //     cell.appendChild(piece);
@@ -308,3 +301,60 @@ function Pawn(color, position) {
         return correctDiagonalMoves.concat(correctVerticalMoves);
     }
 }
+
+function Rook(color, position) {
+    Piece.call(this, color, position);
+    this.type = "rook";
+
+    this.getMoves = function (board) {
+
+        const getVerticalMoves = (direction) => {
+            const moves = [];
+
+            for (let i = this.position + direction; direction === -1 ? i >= 0 : i < 64; i += direction) {
+                if (i % BOARD_SIZE === (this.position % BOARD_SIZE)) {
+                    moves.push(i);
+                }
+            }
+            const pieceInThePath = moves.find(move => board[move]);
+
+            if (!pieceInThePath) {
+                return moves;
+            }
+
+            const pieceIdx = moves.indexOf(pieceInThePath);
+
+            return moves.slice(0, board[pieceInThePath].getColor() !== this.color ? pieceIdx + 1 : pieceIdx);
+        }
+
+        const getHorizontalMoves = (direction) => {
+            const moves = [];
+
+            if (((this.position + 1) % BOARD_SIZE === 0 && direction === 1)
+                || (this.position % BOARD_SIZE === 0 && direction === -1)) {
+                return moves;
+            }
+
+            let move = this.position + direction;
+
+            while ((direction === 1 ? move % BOARD_SIZE : (move + 1) % BOARD_SIZE) && move >= 0 && move < CELL_QTY) {
+                if (board[move]) {
+                    if (board[move].getColor() !== this.getColor()) {
+                        moves.push(move);
+                    }
+                    break;
+                }
+                moves.push(move);
+                move += direction;
+            }
+
+            return moves;
+        }
+
+        return getVerticalMoves(-1)
+            .concat(getVerticalMoves(1))
+            .concat(getHorizontalMoves(1))
+            .concat(getHorizontalMoves(-1));
+    }
+}
+
