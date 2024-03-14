@@ -6,33 +6,33 @@
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link rel="stylesheet" href="/index.css">
-    <script src="/scripts.js" defer></script>
     <title>Chess</title>
 </head>
 <body>
-<header>
-    <div id="player_1" class="player">
-        <div class="player_img"></div>
-        <div class="player_name"></div>
-    </div>
-    <div id="player_2" class="player">
-        <div class="player_img"></div>
-        <div class="player_name"></div>
-    </div>
-</header>
-<main class="wrapper">
-    <div class="game">
-        <div class="board">
-            <div class="rows"></div>
-            <div id="field" class="field"></div>
+    <header>
+        <div id="player_1" class="player">
+            <div class="player_img"></div>
+            <div class="player_name"></div>
         </div>
-        <div class="alphabet"></div>
-    </div>
-    <aside>
-        <div class="moves">
+        <div id="player_2" class="player">
+            <div class="player_img"></div>
+            <div class="player_name"></div>
         </div>
-    </aside>
-</main>
-<script src="/socket.io/socket.io.js"></script>
+    </header>
+    <main class="wrapper">
+        <div class="game">
+            <div class="board">
+                <div class="rows"></div>
+                <div id="field" class="field"></div>
+            </div>
+            <div class="alphabet"></div>
+        </div>
+        <aside>
+            <div class="moves">
+            </div>
+        </aside>
+    </main>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="main.js"></script>
 </body>
 </html>
