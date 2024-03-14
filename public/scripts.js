@@ -41,6 +41,14 @@ for (let i = 0; i < CELL_QTY; i += 1) {
         abstractBoard.push(new Bishop("white", i))
     } else if (i === 2 || i === 5) {
         abstractBoard.push(new Bishop("black", i))
+    } else if (i === 60) {
+        abstractBoard.push(new King("white", i))
+    } else if (i === 4) {
+        abstractBoard.push(new King("black", i))
+    } else if (i === 59) {
+        abstractBoard.push(new Queen("white", i))
+    } else if (i === 3) {
+        abstractBoard.push(new Queen("black", i))
     } else {
         abstractBoard.push(null);
     }
@@ -57,7 +65,6 @@ function initBoard() {
     let draggedIdx;
 
     let isNewRow = false;
-
 
     for (let i = BOARD_SIZE; i > 0; i -= 1) {
         const rowNumber = document.createElement("div");
@@ -97,27 +104,6 @@ function initBoard() {
             piece.classList.add("piece", abstractPiece.getType(), abstractPiece.getColor());
             cell.appendChild(piece);
         }
-
-
-        // if (i === 3) {
-        //     piece.classList.add("queen", "black");
-        //     cell.appendChild(piece);
-        // }
-        //
-        // if (i === 4) {
-        //     piece.classList.add("king", "black");
-        //     cell.appendChild(piece);
-        // }
-        // if (i === 59) {
-        //     piece.classList.add("queen", "white");
-        //     cell.appendChild(piece);
-        // }
-        //
-        // if (i === 60) {
-        //     piece.classList.add("king", "white");
-        //     cell.appendChild(piece);
-        // }
-        //
 
         if (i % 8 === 0) {
             isNewRow = !isNewRow;
@@ -261,6 +247,57 @@ function Piece(color, position) {
             || (this.color === "black" && this.position > 7 && this.position < 16);
     }
 
+    this._getHorizontalMoves = (board, direction, range = BOARD_SIZE) => {
+        const moves = [];
+
+        if (((this.position + 1) % BOARD_SIZE === 0 && direction === 1)
+            || (this.position % BOARD_SIZE === 0 && direction === -1)) {
+            return moves;
+        }
+
+        let move = this.position + direction;
+
+        while ((direction === 1 ? move % BOARD_SIZE : (move + 1) % BOARD_SIZE) && move >= 0 && move < CELL_QTY && range > 0) {
+            if (board[move]) {
+                if (board[move].getColor() !== this.getColor()) {
+                    moves.push(move);
+                }
+                break;
+            }
+            moves.push(move);
+            move += direction;
+            range -= 1
+        }
+
+        return moves;
+    }
+
+    this._getVerticalMoves = (board, direction, range = BOARD_SIZE) => {
+        const moves = [];
+        const step = direction * BOARD_SIZE;
+
+        for (let i = this.position + step; direction === -1 ? i >= 0 : i < CELL_QTY; i += step) {
+            if (range <= 0) {
+                break;
+            }
+
+            if (i % BOARD_SIZE === (this.position % BOARD_SIZE)) {
+                moves.push(i);
+            }
+
+            range -= 1;
+        }
+        const pieceInThePath = moves.find(move => board[move]);
+
+        if (!pieceInThePath) {
+            return moves;
+        }
+
+        const pieceIdx = moves.indexOf(pieceInThePath);
+
+        return moves.slice(0, board[pieceInThePath].getColor() !== this.color ? pieceIdx + 1 : pieceIdx);
+    }
+
     this._getDiagonalMoves = function(board, range = BOARD_SIZE) {
         const moves = [];
 
@@ -329,54 +366,10 @@ function Rook(color, position) {
     this.type = "rook";
 
     this.getMoves = function (board) {
-
-        const getVerticalMoves = (direction) => {
-            const moves = [];
-
-            for (let i = this.position + direction; direction === -1 ? i >= 0 : i < CELL_QTY; i += direction) {
-                if (i % BOARD_SIZE === (this.position % BOARD_SIZE)) {
-                    moves.push(i);
-                }
-            }
-            const pieceInThePath = moves.find(move => board[move]);
-
-            if (!pieceInThePath) {
-                return moves;
-            }
-
-            const pieceIdx = moves.indexOf(pieceInThePath);
-
-            return moves.slice(0, board[pieceInThePath].getColor() !== this.color ? pieceIdx + 1 : pieceIdx);
-        }
-
-        const getHorizontalMoves = (direction) => {
-            const moves = [];
-
-            if (((this.position + 1) % BOARD_SIZE === 0 && direction === 1)
-                || (this.position % BOARD_SIZE === 0 && direction === -1)) {
-                return moves;
-            }
-
-            let move = this.position + direction;
-
-            while ((direction === 1 ? move % BOARD_SIZE : (move + 1) % BOARD_SIZE) && move >= 0 && move < CELL_QTY) {
-                if (board[move]) {
-                    if (board[move].getColor() !== this.getColor()) {
-                        moves.push(move);
-                    }
-                    break;
-                }
-                moves.push(move);
-                move += direction;
-            }
-
-            return moves;
-        }
-
-        return getVerticalMoves(-1)
-            .concat(getVerticalMoves(1))
-            .concat(getHorizontalMoves(1))
-            .concat(getHorizontalMoves(-1));
+        return this._getVerticalMoves(board, -1)
+            .concat(this._getVerticalMoves(board, 1))
+            .concat(this._getHorizontalMoves(board, 1))
+            .concat(this._getHorizontalMoves(board,-1));
     }
 }
 
@@ -415,5 +408,31 @@ function Bishop(color, position) {
 
     this.getMoves = function(board) {
         return this._getDiagonalMoves(board);
+    }
+}
+
+function King(color, position) {
+    Piece.call(this, color, position);
+    this.type = "king";
+
+    this.getMoves = function(board) {
+        return this._getDiagonalMoves(board, 1)
+            .concat(this._getVerticalMoves(board, -1, 1))
+            .concat(this._getVerticalMoves(board, 1, 1))
+            .concat(this._getHorizontalMoves(board, 1, 1))
+            .concat(this._getHorizontalMoves(board,-1, 1));
+    }
+}
+
+function Queen(color, position) {
+    Piece.call(this, color, position);
+    this.type = "queen";
+
+    this.getMoves = function(board) {
+        return this._getDiagonalMoves(board)
+            .concat(this._getVerticalMoves(board, -1))
+            .concat(this._getVerticalMoves(board, 1))
+            .concat(this._getHorizontalMoves(board, 1))
+            .concat(this._getHorizontalMoves(board,-1));
     }
 }
