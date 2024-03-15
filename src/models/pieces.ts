@@ -104,8 +104,10 @@ export class Piece {
             let move = this.position;
             let directionRange = range;
 
-            if (((move + 1) % BOARD_SIZE === 0 && (add === -7 || add === 9))
-                || (move % BOARD_SIZE === 0 && (add === 7 || add === -9))) {
+            const isOutOfBounds = () => ((move + 1) % BOARD_SIZE === 0 && (add === -7 || add === 9))
+              || (move % BOARD_SIZE === 0 && (add === 7 || add === -9));
+
+            if (isOutOfBounds()) {
                 return;
             }
 
@@ -121,6 +123,11 @@ export class Piece {
                     break;
                 }
                 moves.push(move);
+
+                if (isOutOfBounds()) {
+                    break;
+                }
+
                 move += add;
                 directionRange -= 1;
             }
