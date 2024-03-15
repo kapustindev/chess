@@ -95,45 +95,41 @@ export class Piece {
 
     }
 
-    _getDiagonalMoves = (board: Board, range = BOARD_SIZE) => {
-        const moves: number[] = [];
+    _getDiagonalMoves = (board: Board, add: number, range = BOARD_SIZE) => {
+        const currentColor = this.getColor();
+        const currentPos = this.position;
 
-        const possibleDirections = [-7, 7, -9, 9]
+        const isBorderCell = (move: number) => ((move + 1) % BOARD_SIZE === 0 && (add === -7 || add === 9))
+          || (move % BOARD_SIZE === 0 && (add === 7 || add === -9));
 
-        possibleDirections.forEach(add => {
-            let move = this.position;
-            let directionRange = range;
+        if (isBorderCell(currentPos)) {
+            return [];
+        }
 
-            const isOutOfBounds = () => ((move + 1) % BOARD_SIZE === 0 && (add === -7 || add === 9))
-              || (move % BOARD_SIZE === 0 && (add === 7 || add === -9));
+        return getDiagonalMovesRec(currentPos + add, range, []);
 
-            if (isOutOfBounds()) {
-                return;
+        function getDiagonalMovesRec (move: number, range: number, moves: number[]) {
+            if (move < 0 || move >= CELL_QTY || range <= 0) {
+                return moves;
             }
 
-            move += add;
+            const piece = board.getValueFromCell(move);
 
-            while (move >= 0 && move < CELL_QTY && directionRange > 0) {
-                const piece = board.getValueFromCell(move)
-
-                if (piece) {
-                    if (piece.getColor() !== this.getColor()) {
-                        moves.push(move);
-                    }
-                    break;
+            if (piece) {
+                if (piece.getColor() !== currentColor) {
+                    moves.push(move);
                 }
-                moves.push(move);
-
-                if (isOutOfBounds()) {
-                    break;
-                }
-
-                move += add;
-                directionRange -= 1;
+                return moves;
             }
-        })
 
-        return moves;
+            moves.push(move);
+
+            if (isBorderCell(move)) {
+                return moves;
+            }
+
+            return getDiagonalMovesRec(move + add, range - 1, moves);
+        }
     }
 }
 
@@ -225,8 +221,17 @@ export class Bishop extends Piece {
         this.type = "bishop";
     }
 
-    getMoves(board: Board) {
-        return this._getDiagonalMoves(board);
+    getMoves(board: Board, sliced?: boolean) {
+        const a1 = this._getDiagonalMoves(board, 7);
+        const a2 = this._getDiagonalMoves(board, -7);
+        const a3 = this._getDiagonalMoves(board, -9);
+        const a4 = this._getDiagonalMoves(board, 9);
+
+        // if (sliced) {
+        //     return [a1, a2, a3, a4];
+        // }
+
+        return a1.concat(a2).concat(a3).concat(a4);
     }
 }
 
@@ -252,7 +257,12 @@ export class Queen extends Piece {
     }
 
     getMoves(board: Board) {
-        return this._getDiagonalMoves(board)
+        const a1 = this._getDiagonalMoves(board, 7);
+        const a2 = this._getDiagonalMoves(board, -7);
+        const a3 = this._getDiagonalMoves(board, -9);
+        const a4 = this._getDiagonalMoves(board, 9);
+
+        return a1.concat(a2).concat(a3).concat(a4)
             .concat(this._getVerticalMoves(board, -1))
             .concat(this._getVerticalMoves(board, 1))
             .concat(this._getHorizontalMoves(board, 1))
