@@ -104,6 +104,10 @@ header {
     box-shadow: inset 0 0 20px #5EC75E;
 }
 
+.check {
+    box-shadow: inset 0 0 20px #c75e5e;
+}
+
 .rows {
     display: flex;
     flex-direction: column;

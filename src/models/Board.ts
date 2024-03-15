@@ -14,10 +14,14 @@ class Board {
     }
 
     setValueToCell(cell: number, val: Maybe<Piece>) {
+        const opponent = this.board[cell];
+
         if (val) {
             val.setPosition(cell);
         }
         this.board[cell] = val;
+
+        return opponent;
     }
 
     initBoard() {

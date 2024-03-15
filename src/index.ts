@@ -135,8 +135,11 @@ function startNewGame() {
                 const destinationCell = board.convertToAlgebraicNotation(i);
                 const hasEnemy = board.getValueFromCell(i);
 
-                board.setValueToCell(draggedPiece.getPosition(), null);
-                board.setValueToCell(i, draggedPiece);
+                const isMoveValid = game.makeMove(board, draggedPiece.getPosition(), i);
+
+                if (!isMoveValid) {
+                    return;
+                }
 
                 // @ts-expect-error TODO
                 makeMove(dragged, e.currentTarget);
@@ -227,5 +230,5 @@ function reverseBoard() {
 
 function removeSpecialEffects() {
     const allCells = document.querySelectorAll<HTMLDivElement>(".cell");
-    allCells.forEach(cell => cell.classList.remove("possible"));
+    allCells.forEach(cell => cell.classList.remove("possible", "check"));
 }
