@@ -34,7 +34,12 @@ export class Piece {
             || (this.color === "black" && this.position > 7 && this.position < 16);
     }
 
-    getMoves(board: Board): number[] {
+    getMoves(board: Board, sliced?: false): number[]
+    getMoves(board: Board, sliced: true): number[][]
+    getMoves(board: Board, sliced?: boolean) {
+        if (sliced) {
+            return [];
+        }
         return [];
     }
 
@@ -142,7 +147,9 @@ export class Pawn extends Piece {
         this.direction = color === EPlayer.White ? EDirection.Positive : EDirection.Negative;
     }
 
-    getMoves(board: Board) {
+    getMoves(board: Board, sliced?: false): number[]
+    getMoves(board: Board, sliced: true): number[][]
+    getMoves(board: Board, sliced?: boolean) {
         const verticalMoves = [this.position - (8 * this.direction)];
 
         if (this.isHomeRank()) {
@@ -164,6 +171,10 @@ export class Pawn extends Piece {
             return false;
         })
 
+        if (sliced) {
+            return [correctDiagonalMoves, correctVerticalMoves];
+        }
+
         return correctDiagonalMoves.concat(correctVerticalMoves);
     }
 }
@@ -174,11 +185,20 @@ export class Rook extends Piece {
         this.type = "rook";
     }
 
-    getMoves(board: Board) {
-        return this._getVerticalMoves(board, -1)
-            .concat(this._getVerticalMoves(board, 1))
-            .concat(this._getHorizontalMoves(board, 1))
-            .concat(this._getHorizontalMoves(board,-1));
+    getMoves(board: Board, sliced?: false): number[]
+    getMoves(board: Board, sliced: true): number[][]
+    getMoves(board: Board, sliced?: boolean) {
+        const v1 = this._getVerticalMoves(board, -1);
+        const v2 = this._getVerticalMoves(board, 1);
+
+        const h1 = this._getHorizontalMoves(board, 1);
+        const h2 = this._getHorizontalMoves(board,-1);
+
+        if (sliced) {
+            return [v1, v2, h1, h2];
+        }
+
+        return v1.concat(v2).concat(h1).concat(h2);
     }
 }
 
@@ -189,7 +209,9 @@ export class Knight extends Piece {
     }
 
     // BUG WITH A/B OR G/H columns
-    getMoves(board: Board) {
+    getMoves(board: Board, sliced?: false): number[]
+    getMoves(board: Board, sliced: true): number[][]
+    getMoves(board: Board, sliced?: boolean) {
         const moves: number[] = [];
         const cellsToAdd = [6, 10, 15, 17];
 
@@ -211,6 +233,10 @@ export class Knight extends Piece {
             })
         }
 
+        if (sliced) {
+            return [moves];
+        }
+
         return moves;
     }
 }
@@ -221,15 +247,17 @@ export class Bishop extends Piece {
         this.type = "bishop";
     }
 
+    getMoves(board: Board, sliced?: false): number[]
+    getMoves(board: Board, sliced: true): number[][]
     getMoves(board: Board, sliced?: boolean) {
-        const a1 = this._getDiagonalMoves(board, 7);
-        const a2 = this._getDiagonalMoves(board, -7);
-        const a3 = this._getDiagonalMoves(board, -9);
+        const a1 = this._getDiagonalMoves(board, -7);
+        const a2 = this._getDiagonalMoves(board, -9);
+        const a3 = this._getDiagonalMoves(board, 7);
         const a4 = this._getDiagonalMoves(board, 9);
 
-        // if (sliced) {
-        //     return [a1, a2, a3, a4];
-        // }
+        if (sliced) {
+            return [a1, a2, a3, a4];
+        }
 
         return a1.concat(a2).concat(a3).concat(a4);
     }
@@ -241,12 +269,25 @@ export class King extends Piece {
         this.type = "king";
     }
 
-    getMoves(board: Board) {
-        return this._getDiagonalMoves(board, 1)
-            .concat(this._getVerticalMoves(board, -1, 1))
-            .concat(this._getVerticalMoves(board, 1, 1))
-            .concat(this._getHorizontalMoves(board, 1, 1))
-            .concat(this._getHorizontalMoves(board,-1, 1));
+    getMoves(board: Board, sliced?: false): number[]
+    getMoves(board: Board, sliced: true): number[][]
+    getMoves(board: Board, sliced?: boolean) {
+        const d1 = this._getDiagonalMoves(board, -7, 1);
+        const d2 = this._getDiagonalMoves(board, -9, 1);
+        const d3 = this._getDiagonalMoves(board, 7, 1);
+        const d4 = this._getDiagonalMoves(board, 9, 1);
+
+        const v1 = this._getVerticalMoves(board, -1, 1);
+        const v2 = this._getHorizontalMoves(board, 1, 1);
+
+        const h1 = this._getHorizontalMoves(board, 1, 1);
+        const h2 = this._getHorizontalMoves(board,-1, 1);
+
+        if (sliced) {
+            return [d1, d2, d3, d4, v1, v2, h1, h2];
+        }
+
+        return d1.concat(d2).concat(d3).concat(d4).concat(v1).concat(v2).concat(h1).concat(h2);
     }
 }
 
@@ -256,16 +297,24 @@ export class Queen extends Piece {
         this.type = "queen";
     }
 
-    getMoves(board: Board) {
-        const a1 = this._getDiagonalMoves(board, 7);
-        const a2 = this._getDiagonalMoves(board, -7);
-        const a3 = this._getDiagonalMoves(board, -9);
-        const a4 = this._getDiagonalMoves(board, 9);
+    getMoves(board: Board, sliced?: false): number[]
+    getMoves(board: Board, sliced: true): number[][]
+    getMoves(board: Board, sliced?: boolean) {
+        const d1 = this._getDiagonalMoves(board, -7);
+        const d2 = this._getDiagonalMoves(board, -9);
+        const d3 = this._getDiagonalMoves(board, 7);
+        const d4 = this._getDiagonalMoves(board, 9);
 
-        return a1.concat(a2).concat(a3).concat(a4)
-            .concat(this._getVerticalMoves(board, -1))
-            .concat(this._getVerticalMoves(board, 1))
-            .concat(this._getHorizontalMoves(board, 1))
-            .concat(this._getHorizontalMoves(board,-1));
+        const v1 = this._getVerticalMoves(board, -1);
+        const v2 = this._getVerticalMoves(board, 1);
+
+        const h1 = this._getHorizontalMoves(board, 1);
+        const h2 = this._getHorizontalMoves(board,-1);
+
+        if (sliced) {
+            return [d1, d2, d3, d4, v1, v2, h1, h2];
+        }
+
+        return d1.concat(d2).concat(d3).concat(d4).concat(h1).concat(h2).concat(v1).concat(v2);
     }
 }
