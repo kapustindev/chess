@@ -148,13 +148,12 @@ function startNewGame() {
                 move.classList.add("move");
                 move.textContent = `${startCell} ${hasEnemy ? "#" : "->"} ${destinationCell}`;
 
-                if (game.getMove() % 2) {
+                if (game.getMoves().length % 2) {
                     const moveLineNumber = document.createElement("div");
                     moveLineNumber.classList.add("move_counter");
-                    moveLineNumber.textContent = `${Math.ceil(game.getMove() / 2)}.`;
+                    moveLineNumber.textContent = `${Math.ceil(game.getMoves().length / 2)}.`;
                     movesTable.appendChild(moveLineNumber);
                 }
-                game.incMove();
 
                 movesTable.appendChild(move);
                 game.endTurn();

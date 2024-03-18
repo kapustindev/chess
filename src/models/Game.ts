@@ -6,12 +6,12 @@ import {difference} from "lodash";
 class Game {
     status: GameStatus;
     player: EPlayer;
-    move: number;
+    moves: number[][];
 
     constructor() {
         this.status = "IN_PROGRESS";
         this.player = EPlayer.White
-        this.move = 1
+        this.moves = []
     }
 
     getPlayer() {
@@ -20,11 +20,8 @@ class Game {
     setPlayer(opponent: EPlayer) {
         this.player = opponent;
     }
-    getMove() {
-        return this.move;
-    }
-    incMove() {
-        this.move += 1;
+    getMoves() {
+        return this.moves;
     }
 
     getStatus() {
@@ -57,6 +54,8 @@ class Game {
             return false;
         }
 
+        this.moves.push([start, destination])
+
         return true;
     }
 
@@ -64,10 +63,33 @@ class Game {
         this.setPlayer(this.player === EPlayer.White ? EPlayer.Black : EPlayer.White);
     }
 
+   private isCastlingPossible(board: Board, type: "king" | "queen") {
+        const kingStartingPosition = this.player == EPlayer.White ? 60 : 4;
+        const didKingMove = Boolean(this.moves.find(move => move.includes(kingStartingPosition)));
+
+        if (type === "king") {
+            return isCastlingValid(kingStartingPosition + 3, this.moves, 1);
+        } else {
+            return isCastlingValid(kingStartingPosition - 4, this.moves, -1);
+        }
+
+        function isCastlingValid(rookPos: number, moves: number[][], direction: number) {
+            const didRookMove = Boolean(moves.find(move => move.includes(rookPos)));
+
+            if (didKingMove || didRookMove) {
+                return false;
+            }
+
+            const king = board.getValueFromCell(kingStartingPosition)!;
+
+            return king._getHorizontalMoves(board, direction).includes(rookPos - direction);
+        }
+    }
+
     checkForCheck(board: Board) {
         const opponentColor = this.player === EPlayer.White ? EPlayer.Black : EPlayer.White;
-        const possibleOpponentMoves: Map<number, number[][]> = new Map();
-        const possiblePlayerMoves: Map<number, number[]> = new Map();
+        const possibleOpponentMoves: Record<number, number[][]> = {};
+        const possiblePlayerMoves: Record<number, number[]> = {};
 
         let kingMoves;
         let kingPosition = 0;
@@ -78,13 +100,13 @@ class Game {
 
             if (piece) {
                 if (piece.getColor() === opponentColor) {
-                    possibleOpponentMoves.set(cell, piece.getMoves(board, true));
+                    possibleOpponentMoves[cell] = piece.getMoves(board, true);
                 } else {
                     if (piece.getType() === "king") {
                         kingPosition = piece.getPosition();
                         kingMoves = piece.getMoves(board);
                     } else {
-                        possiblePlayerMoves.set(cell, piece.getMoves(board));
+                        possiblePlayerMoves[cell] = piece.getMoves(board);
                     }
                 }
             }
@@ -93,28 +115,29 @@ class Game {
         const attackPaths: number[][] = [];
         const flatPossibleOpponentMoves: number[] = [];
 
-        possibleOpponentMoves.forEach((moveSlices, cell) => {
+        for (const [cell, moveSlices] of Object.entries(possibleOpponentMoves)) {
             flatPossibleOpponentMoves.push(...moveSlices.flat());
+
             for (const slice of moveSlices) {
                 for (const move of slice) {
                     if (kingPosition === move) {
-                        attackPaths.push([cell, ...slice])
+                        attackPaths.push([+cell, ...slice])
                         isCheck = true;
                     }
                 }
             }
-        })
+        }
 
         const possibleKingMoves = difference(kingMoves, flatPossibleOpponentMoves);
 
         if (attackPaths.length === 1) {
             let i = 0;
 
-            possiblePlayerMoves.forEach((moves) => {
+            for (const moves of Object.values(possiblePlayerMoves)) {
                 if (intersection(attackPaths[0], moves).length > 0) {
                     i += 1;
                 }
-            })
+            }
 
             if (i == 0 && possibleKingMoves.length == 0) {
                 const winner = this.player == EPlayer.White ? "BLACK_WON" : "WHITE_WON"
