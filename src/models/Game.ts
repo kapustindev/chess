@@ -1,7 +1,7 @@
 import {EPlayer, GameStatus} from "./types";
 import Board from "./Board";
 import intersection from "lodash/fp/intersection";
-import {difference} from "lodash";
+import difference from "lodash/fp/difference";
 
 class Game {
     status: GameStatus;

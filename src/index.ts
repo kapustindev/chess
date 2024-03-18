@@ -1,6 +1,7 @@
 import { BOARD_SIZE, CELL_QTY, ASCII_A } from './constants';
 import Game from "./models/Game";
 import Board from "./models/Board";
+import { Maybe } from "./utilityTypes";
 
 // const socket = io();
 
@@ -38,6 +39,7 @@ function startNewGame() {
 
     let dragged: HTMLDivElement;
     let draggedIdx: string;
+    let clicked: Maybe<HTMLDivElement>;
 
     let isNewRow = false;
 
@@ -63,6 +65,11 @@ function startNewGame() {
 
         if (abstractPiece) {
             piece.classList.add("piece", abstractPiece.getType(), abstractPiece.getColor());
+
+            piece.addEventListener("click", (e) => {
+                e.stopPropagation();
+                clicked = e.target as HTMLDivElement;
+            })
 
             piece.setAttribute("draggable", "true");
             cell.appendChild(piece);
@@ -128,39 +135,57 @@ function startNewGame() {
             cell.classList.remove("target");
             removeSpecialEffects();
 
-            const draggedPiece = board.getValueFromCell(+draggedIdx);
+            // @ts-expect-error
+            makeMove(dragged, e.currentTarget);
+        })
 
-            if (draggedPiece && draggedPiece.getMoves(board).includes(i)) {
-                const startCell = board.convertToAlgebraicNotation(draggedPiece.getPosition());
-                const destinationCell = board.convertToAlgebraicNotation(i);
-                const hasEnemy = board.getValueFromCell(i);
-
-                const isMoveValid = game.makeMove(board, draggedPiece.getPosition(), i);
-
-                if (!isMoveValid) {
-                    return;
-                }
-
-                // @ts-expect-error TODO
-                makeMove(dragged, e.currentTarget);
-                const movesTable = document.querySelector<HTMLDivElement>(".moves")!;
-                const move = document.createElement("div");
-                move.classList.add("move");
-                move.textContent = `${startCell} ${hasEnemy ? "#" : "->"} ${destinationCell}`;
-
-                if (game.getMoves().length % 2) {
-                    const moveLineNumber = document.createElement("div");
-                    moveLineNumber.classList.add("move_counter");
-                    moveLineNumber.textContent = `${Math.ceil(game.getMoves().length / 2)}.`;
-                    movesTable.appendChild(moveLineNumber);
-                }
-
-                movesTable.appendChild(move);
-                game.endTurn();
-
-                // socket.emit("move", ({ start: draggedIdx, end: i }))
+        cell.addEventListener("click", (e) => {
+            if (clicked) {
+                // @ts-expect-error
+                makeMove(clicked, e.currentTarget);
+                clicked = null;
             }
         })
+
+        function makeMove(pieceElement: HTMLDivElement, destination: HTMLDivElement) {
+            // @ts-ignore
+            const piece = board.getValueFromCell(+pieceElement.parentNode.id);
+
+            if (!piece || !piece.getMoves(board).includes(+destination.id) || game.getPlayer() !== piece.getColor()) {
+                return false;
+            }
+
+            const startCell = board.convertToAlgebraicNotation(piece.getPosition());
+            const destinationCell = board.convertToAlgebraicNotation(i);
+            const hasEnemy = board.getValueFromCell(i);
+
+            const isMoveValid = game.makeMove(board, piece.getPosition(), i);
+
+            if (!isMoveValid) {
+                return;
+            }
+
+            if (destination.hasChildNodes()) {
+                destination.innerHTML = "";
+            }
+
+            destination.appendChild(pieceElement);
+
+            const movesTable = document.querySelector<HTMLDivElement>(".moves")!;
+            const move = document.createElement("div");
+            move.classList.add("move");
+            move.textContent = `${startCell} ${hasEnemy ? "#" : "->"} ${destinationCell}`;
+
+            if (game.getMoves().length % 2) {
+                const moveLineNumber = document.createElement("div");
+                moveLineNumber.classList.add("move_counter");
+                moveLineNumber.textContent = `${Math.ceil(game.getMoves().length / 2)}.`;
+                movesTable.appendChild(moveLineNumber);
+            }
+
+            movesTable.appendChild(move);
+            game.endTurn();
+        }
 
         gameField.appendChild(cell);
     }
@@ -201,14 +226,6 @@ function registerPlayer(idx: number) {
     if (body) {
         body.appendChild(modal)
     }
-}
-
-function makeMove(piece: HTMLDivElement, destination: HTMLDivElement) {
-    if (destination.hasChildNodes()) {
-        destination.innerHTML = "";
-    }
-
-    destination.appendChild(piece);
 }
 
 function reverseBoard() {
