@@ -6,11 +6,13 @@ export class Piece {
     color: EPlayer;
     position: number;
     type: UPiece
+    possibleMoves: number[];
 
     constructor(color: EPlayer, position: number) {
         this.color = color;
         this.position = position;
         this.type = "piece";
+        this.possibleMoves = [];
     }
 
     getColor() {
@@ -32,6 +34,14 @@ export class Piece {
     isHomeRank() {
         return (this.color === "white" && this.position > 47 && this.position < 56)
             || (this.color === "black" && this.position > 7 && this.position < 16);
+    }
+
+    setPossibleMoves(moves: number[]) {
+        this.possibleMoves = moves;
+    }
+
+    getPossibleMoves() {
+        return this.possibleMoves;
     }
 
     getMoves(board: Board, sliced?: false): number[]
@@ -175,7 +185,9 @@ export class Pawn extends Piece {
             return [correctDiagonalMoves, correctVerticalMoves];
         }
 
-        return correctDiagonalMoves.concat(correctVerticalMoves);
+        this.possibleMoves = correctDiagonalMoves.concat(correctVerticalMoves);
+
+        return this.possibleMoves;
     }
 }
 
@@ -198,7 +210,9 @@ export class Rook extends Piece {
             return [v1, v2, h1, h2];
         }
 
-        return v1.concat(v2).concat(h1).concat(h2);
+        this.possibleMoves = v1.concat(v2).concat(h1).concat(h2);
+
+        return this.possibleMoves;
     }
 }
 
@@ -237,7 +251,8 @@ export class Knight extends Piece {
             return [moves];
         }
 
-        return moves;
+        this.possibleMoves = moves;
+        return this.possibleMoves;
     }
 }
 
@@ -259,7 +274,8 @@ export class Bishop extends Piece {
             return [a1, a2, a3, a4];
         }
 
-        return a1.concat(a2).concat(a3).concat(a4);
+        this.possibleMoves = a1.concat(a2).concat(a3).concat(a4);
+        return this.possibleMoves;
     }
 }
 
@@ -287,7 +303,8 @@ export class King extends Piece {
             return [d1, d2, d3, d4, v1, v2, h1, h2];
         }
 
-        return d1.concat(d2).concat(d3).concat(d4).concat(v1).concat(v2).concat(h1).concat(h2);
+        this.possibleMoves = d1.concat(d2).concat(d3).concat(d4).concat(v1).concat(v2).concat(h1).concat(h2);
+        return this.possibleMoves;
     }
 }
 
@@ -315,6 +332,7 @@ export class Queen extends Piece {
             return [d1, d2, d3, d4, v1, v2, h1, h2];
         }
 
-        return d1.concat(d2).concat(d3).concat(d4).concat(h1).concat(h2).concat(v1).concat(v2);
+        this.possibleMoves = d1.concat(d2).concat(d3).concat(d4).concat(h1).concat(h2).concat(v1).concat(v2);
+        return this.possibleMoves;
     }
 }

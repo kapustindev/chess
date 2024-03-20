@@ -3,28 +3,6 @@ import Game from "./models/Game";
 import Board from "./models/Board";
 import { Maybe } from "./utilityTypes";
 
-// const socket = io();
-
-// socket.on('registration', ({ name, idx, color }) => {
-//     const playerNode = document.getElementById(`player_${idx}`);
-//     const [photoNode, nameNode] = playerNode.children;
-//
-//     photoNode.textContent = name[0].toUpperCase();
-//     photoNode.style.backgroundColor = color;
-//
-//     nameNode.textContent = name;
-//     nameNode.classList.add("active");
-// });
-//
-// socket.on('move', ({ start, end }) => {
-//     const cells = document.querySelectorAll(".cell");
-//
-//     const [piece] = cells[start].children;
-//     const destination = cells[end];
-//
-//     makeMove(piece, destination);
-// })
-
 startNewGame();
 
 function startNewGame() {
@@ -36,6 +14,7 @@ function startNewGame() {
     const gameField = document.getElementById("field")!;
     const rows = document.querySelector<HTMLDivElement>(".rows")!;
     const alpha = document.querySelector<HTMLDivElement>(".alphabet")!;
+    createPlayersButtons();
 
     let dragged: HTMLDivElement;
     let draggedIdx: string;
@@ -60,49 +39,6 @@ function startNewGame() {
     for (let i = 0; i < CELL_QTY; i += 1) {
         const cell = document.createElement("div");
         cell.setAttribute("id", String(i));
-        const piece = document.createElement("div");
-        const abstractPiece = board.getValueFromCell(i);
-
-        if (abstractPiece) {
-            piece.classList.add("piece", abstractPiece.getType(), abstractPiece.getColor());
-
-            piece.addEventListener("click", (e) => {
-                e.stopPropagation();
-                clicked = e.target as HTMLDivElement;
-            })
-
-            piece.setAttribute("draggable", "true");
-            cell.appendChild(piece);
-
-            piece.addEventListener("dragstart", (e) => {
-                removeSpecialEffects();
-                dragged = e.target as HTMLDivElement;
-                if (dragged.parentNode) {
-
-                    // @ts-expect-error
-                    draggedIdx = dragged.parentNode.id;
-
-                    const piece = board.getValueFromCell(+draggedIdx);
-
-                    const isPlayersPiece = piece?.getColor() === game.getPlayer();
-
-                    if (!isPlayersPiece) {
-                        e.preventDefault();
-
-                        dragged.classList.add("invalid_move");
-                        dragged.parentNode.addEventListener("onmouseleave", () => {
-                            dragged.classList.remove("invalid_move");
-                        })
-                        return;
-                    }
-                }
-
-                abstractPiece.getMoves(board).forEach((move) => {
-                    const square = document.getElementById(String(move))!;
-                    square.classList.add("possible");
-                })
-            })
-        }
 
         if (i % 8 === 0) {
             isNewRow = !isNewRow;
@@ -140,7 +76,11 @@ function startNewGame() {
         })
 
         cell.addEventListener("click", (e) => {
-            if (clicked) {
+            if (!clicked) {
+                if (cell.hasChildNodes()) {
+                    clicked = cell.firstChild as HTMLDivElement;
+                }
+            } else {
                 // @ts-expect-error
                 makeMove(clicked, e.currentTarget);
                 clicked = null;
@@ -148,10 +88,11 @@ function startNewGame() {
         })
 
         function makeMove(pieceElement: HTMLDivElement, destination: HTMLDivElement) {
+            const [isCheck, kingPos] = game.getAllMoves(board);
             // @ts-ignore
             const piece = board.getValueFromCell(+pieceElement.parentNode.id);
 
-            if (!piece || !piece.getMoves(board).includes(+destination.id) || game.getPlayer() !== piece.getColor()) {
+            if (!piece || !piece.getPossibleMoves().includes(+destination.id) || game.getPlayer() !== piece.getColor()) {
                 return false;
             }
 
@@ -165,21 +106,20 @@ function startNewGame() {
                 return;
             }
 
-            if (destination.hasChildNodes()) {
-                destination.innerHTML = "";
-            }
+            const movesRecord = game.getMoves();
 
-            destination.appendChild(pieceElement);
+            // Update the cells of the previous move
+            renderPieces(movesRecord[movesRecord.length - 1]);
 
             const movesTable = document.querySelector<HTMLDivElement>(".moves")!;
             const move = document.createElement("div");
             move.classList.add("move");
             move.textContent = `${startCell} ${hasEnemy ? "#" : "->"} ${destinationCell}`;
 
-            if (game.getMoves().length % 2) {
+            if (movesRecord.length % 2) {
                 const moveLineNumber = document.createElement("div");
                 moveLineNumber.classList.add("move_counter");
-                moveLineNumber.textContent = `${Math.ceil(game.getMoves().length / 2)}.`;
+                moveLineNumber.textContent = `${Math.ceil(movesRecord.length / 2)}.`;
                 movesTable.appendChild(moveLineNumber);
             }
 
@@ -189,16 +129,63 @@ function startNewGame() {
 
         gameField.appendChild(cell);
     }
+    renderPieces(Array.from({ length: 64 }, (_, i) => i));
 
+    function renderPieces(cells: number[]) {
+        for (const cell of cells) {
+            const cellElement = document.getElementById(String(cell))!;
+            const piece = board.getValueFromCell(cell);
+            const pieceElement = document.createElement("div");
+            cellElement.innerHTML = "";
+
+            if (piece) {
+                pieceElement.classList.add("piece", piece.getType(), piece.getColor());
+                pieceElement.setAttribute("draggable", "true");
+                cellElement.appendChild(pieceElement);
+
+                pieceElement.addEventListener("dragstart", (e) => {
+                    removeSpecialEffects();
+                    dragged = e.target as HTMLDivElement;
+                    if (dragged.parentNode) {
+
+                        // @ts-expect-error
+                        draggedIdx = dragged.parentNode.id;
+
+                        const piece = board.getValueFromCell(+draggedIdx);
+
+                        const isPlayersPiece = piece?.getColor() === game.getPlayer();
+
+                        if (!isPlayersPiece) {
+                            e.preventDefault();
+
+                            dragged.classList.add("invalid_move");
+                            dragged.parentNode.addEventListener("onmouseleave", () => {
+                                dragged.classList.remove("invalid_move");
+                            })
+                            return;
+                        }
+                    }
+
+                    piece.getMoves(board).forEach((move) => {
+                        const square = document.getElementById(String(move))!;
+                        square.classList.add("possible");
+                    })
+                })
+            }
+        }
+    }
+}
+
+function createPlayersButtons() {
     const playerNames = document.querySelectorAll(".player_name");
 
     for (let idx = 0; idx < playerNames.length; idx += 1) {
         const node = playerNames[idx];
         const takePlaceButton = document.createElement("button");
-        takePlaceButton.classList.add("play_button")
+        takePlaceButton.classList.add("play_button");
         takePlaceButton.innerText = "Play as " + (idx === 0 ? "white" : "black");
         takePlaceButton.addEventListener('click', () => registerPlayer(idx + 1))
-        node.append(takePlaceButton)
+        node.append(takePlaceButton);
     }
 }
 
@@ -248,3 +235,26 @@ function removeSpecialEffects() {
     const allCells = document.querySelectorAll<HTMLDivElement>(".cell");
     allCells.forEach(cell => cell.classList.remove("possible", "check"));
 }
+
+
+// const socket = io();
+
+// socket.on('registration', ({ name, idx, color }) => {
+//     const playerNode = document.getElementById(`player_${idx}`);
+//     const [photoNode, nameNode] = playerNode.children;
+//
+//     photoNode.textContent = name[0].toUpperCase();
+//     photoNode.style.backgroundColor = color;
+//
+//     nameNode.textContent = name;
+//     nameNode.classList.add("active");
+// });
+//
+// socket.on('move', ({ start, end }) => {
+//     const cells = document.querySelectorAll(".cell");
+//
+//     const [piece] = cells[start].children;
+//     const destination = cells[end];
+//
+//     makeMove(piece, destination);
+// })

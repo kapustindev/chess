@@ -41,7 +41,7 @@ class Game {
 
         const opponent = board.setValueToCell(destination, piece);
 
-        const [isCheck] = this.checkForCheck(board);
+        const [isCheck] = this.getAllMoves(board);
 
         if (this.getStatus() != "IN_PROGRESS") {
             console.log("The game is over");
@@ -86,7 +86,7 @@ class Game {
         }
     }
 
-    checkForCheck(board: Board) {
+    getAllMoves(board: Board) {
         const opponentColor = this.player === EPlayer.White ? EPlayer.Black : EPlayer.White;
         const possibleOpponentMoves: Record<number, number[][]> = {};
         const possiblePlayerMoves: Record<number, number[]> = {};
@@ -129,6 +129,8 @@ class Game {
         }
 
         const possibleKingMoves = difference(kingMoves, flatPossibleOpponentMoves);
+        const king = board.getValueFromCell(kingPosition)!;
+        king.setPossibleMoves(possibleKingMoves);
 
         if (attackPaths.length === 1) {
             let i = 0;
@@ -139,7 +141,7 @@ class Game {
                 }
             }
 
-            if (i == 0 && possibleKingMoves.length == 0) {
+            if (i == 0 && king.getPossibleMoves().length == 0) {
                 const winner = this.player == EPlayer.White ? "BLACK_WON" : "WHITE_WON"
                 this.setStatus(winner);
             }
