@@ -30,6 +30,7 @@ class Game {
     }
 
     makeMove(board: Board, start: number, destination: number) {
+        let move: number[] = [start, destination];
         const piece = board.getValueFromCell(start);
 
         const isCastling = piece?.getType() == "king" && Math.abs(destination % BOARD_SIZE - start % BOARD_SIZE) > 1;
@@ -44,9 +45,21 @@ class Game {
             const rook = board.getValueFromCell(rookPos)!;
             board.setValueToCell(isKingside ? destination - 1 : destination + 1, rook);
             board.setValueToCell(rookPos, null);
+
+            const rangeEnd = isKingside ? destination + 2 : destination - 3;
+            move = range(start, rangeEnd);
         }
 
         const opponent = board.setValueToCell(destination, piece);
+
+        const isEnPassant = piece?.getType() == "pawn" && (destination % BOARD_SIZE) != (start % BOARD_SIZE) && !opponent;
+
+        if (isEnPassant) {
+            const direction = this.player == EPlayer.White ? 1 : -1;
+            const opponentPawnPos = destination + (BOARD_SIZE * direction);
+            board.setValueToCell(opponentPawnPos, null);
+            move.push(opponentPawnPos);
+        }
 
         const [isCheck] = this.getAllMoves(board);
 
@@ -61,12 +74,7 @@ class Game {
             return false;
         }
 
-        if (isCastling) {
-            const rangeEnd = start > destination ? destination - 3 : destination + 2;
-            board.moves.push(range(start, rangeEnd));
-        } else {
-            board.moves.push([start, destination])
-        }
+        board.moves.push(move);
 
         return true;
     }

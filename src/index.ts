@@ -2,7 +2,7 @@ import { BOARD_SIZE, CELL_QTY, ASCII_A } from './constants';
 import Game from "./models/Game";
 import Board from "./models/Board";
 import { Maybe } from "./utilityTypes";
-import { getCastlingTextContent } from "./utils";
+import { getMoveDesc } from "./utils";
 
 startNewGame();
 
@@ -97,8 +97,6 @@ function startNewGame() {
                 return false;
             }
 
-            const startCell = board.convertToAlgebraicNotation(piece.getPosition());
-            const destinationCell = board.convertToAlgebraicNotation(i);
             const hasEnemy = board.getValueFromCell(i);
 
             const isMoveValid = game.makeMove(board, piece.getPosition(), i);
@@ -117,11 +115,7 @@ function startNewGame() {
             const move = document.createElement("div");
             move.classList.add("move");
 
-            if (lastMove.length > 2) {
-                move.textContent = getCastlingTextContent(lastMove.length == 4 ? "king" : "queen");
-            } else {
-                move.textContent = `${startCell} ${hasEnemy ? "#" : "->"} ${destinationCell}`;
-            }
+            move.textContent = getMoveDesc(board, lastMove, !!hasEnemy);
 
             if (movesRecord.length % 2) {
                 const moveLineNumber = document.createElement("div");

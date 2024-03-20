@@ -181,6 +181,27 @@ export class Pawn extends Piece {
             return false;
         })
 
+        // En passant
+        if (board.getMoves().length != 0) {
+            const [start, end] = board.getMoves()[board.getMoves().length - 1];
+
+            // Check that the last move is to the left or right of the pawn
+            if (Math.abs(this.position - end) == 1) {
+                // Since it is the last move -> it is the opponents piece
+                const piece = board.getValueFromCell(end)!;
+
+                // Check if it is a pawn
+                if (piece.getType() == "pawn") {
+                    const direction = this.color == EPlayer.White ? -1 : 1;
+
+                    // Check if the move was from the home rank
+                    if (start === end + (16 * direction)) {
+                        correctDiagonalMoves.push(end + (8 * direction));
+                    }
+                }
+            }
+        }
+
         if (sliced) {
             return [correctDiagonalMoves, correctVerticalMoves];
         }
