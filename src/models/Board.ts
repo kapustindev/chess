@@ -5,8 +5,15 @@ import { EPlayer } from "./types";
 
 class Board {
     board: Maybe<Piece>[]
+    moves: number[][];
+
     constructor() {
         this.board = [];
+        this.moves = [];
+    }
+
+    getMoves() {
+        return this.moves;
     }
 
     getValueFromCell(cell: number) {

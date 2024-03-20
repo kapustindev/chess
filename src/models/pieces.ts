@@ -285,6 +285,32 @@ export class King extends Piece {
         this.type = "king";
     }
 
+    getCastlingMoves(board: Board) {
+        const defaultKingPosition = this.color == EPlayer.White ? 60 : 4;
+        const castlingMoves: number[] = [];
+        const didKingMove = Boolean(board.moves.find(move => move.includes(defaultKingPosition)));
+
+        const isCastlingValid = (rookPos: number, moves: number[][], direction: number) => {
+            const didRookMove = Boolean(moves.find(move => move.includes(rookPos)));
+
+            if (didKingMove || didRookMove) {
+                return false;
+            }
+
+            return this._getHorizontalMoves(board, direction).includes(rookPos - direction);
+        }
+
+        if (isCastlingValid(defaultKingPosition + 3, board.moves, 1)) {
+            castlingMoves.push(defaultKingPosition + 2);
+        }
+
+        if (isCastlingValid(defaultKingPosition - 4, board.moves, -1)) {
+            castlingMoves.push(defaultKingPosition - 2);
+        }
+
+        return castlingMoves
+    }
+
     getMoves(board: Board, sliced?: false): number[]
     getMoves(board: Board, sliced: true): number[][]
     getMoves(board: Board, sliced?: boolean) {
@@ -299,11 +325,13 @@ export class King extends Piece {
         const h1 = this._getHorizontalMoves(board, 1, 1);
         const h2 = this._getHorizontalMoves(board,-1, 1);
 
+        const castlingMoves = this.getCastlingMoves(board);
+
         if (sliced) {
-            return [d1, d2, d3, d4, v1, v2, h1, h2];
+            return [d1, d2, d3, d4, v1, v2, h1, h2, castlingMoves];
         }
 
-        this.possibleMoves = d1.concat(d2).concat(d3).concat(d4).concat(v1).concat(v2).concat(h1).concat(h2);
+        this.possibleMoves = d1.concat(d2).concat(d3).concat(d4).concat(v1).concat(v2).concat(h1).concat(h2).concat(castlingMoves);
         return this.possibleMoves;
     }
 }

@@ -2,6 +2,7 @@ import { BOARD_SIZE, CELL_QTY, ASCII_A } from './constants';
 import Game from "./models/Game";
 import Board from "./models/Board";
 import { Maybe } from "./utilityTypes";
+import { getCastlingTextContent } from "./utils";
 
 startNewGame();
 
@@ -106,15 +107,21 @@ function startNewGame() {
                 return;
             }
 
-            const movesRecord = game.getMoves();
+            const movesRecord = board.getMoves();
+            const lastMove = movesRecord[movesRecord.length - 1]
 
             // Update the cells of the previous move
-            renderPieces(movesRecord[movesRecord.length - 1]);
+            renderPieces(lastMove);
 
             const movesTable = document.querySelector<HTMLDivElement>(".moves")!;
             const move = document.createElement("div");
             move.classList.add("move");
-            move.textContent = `${startCell} ${hasEnemy ? "#" : "->"} ${destinationCell}`;
+
+            if (lastMove.length > 2) {
+                move.textContent = getCastlingTextContent(lastMove.length == 4 ? "king" : "queen");
+            } else {
+                move.textContent = `${startCell} ${hasEnemy ? "#" : "->"} ${destinationCell}`;
+            }
 
             if (movesRecord.length % 2) {
                 const moveLineNumber = document.createElement("div");

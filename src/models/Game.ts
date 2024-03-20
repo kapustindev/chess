@@ -1,17 +1,17 @@
-import {EPlayer, GameStatus} from "./types";
+import { EPlayer, GameStatus } from "./types";
 import Board from "./Board";
 import intersection from "lodash/fp/intersection";
 import difference from "lodash/fp/difference";
+import range from "lodash/fp/range";
+import { BOARD_SIZE } from "../constants";
 
 class Game {
     status: GameStatus;
     player: EPlayer;
-    moves: number[][];
 
     constructor() {
         this.status = "IN_PROGRESS";
         this.player = EPlayer.White
-        this.moves = []
     }
 
     getPlayer() {
@@ -19,9 +19,6 @@ class Game {
     }
     setPlayer(opponent: EPlayer) {
         this.player = opponent;
-    }
-    getMoves() {
-        return this.moves;
     }
 
     getStatus() {
@@ -35,8 +32,18 @@ class Game {
     makeMove(board: Board, start: number, destination: number) {
         const piece = board.getValueFromCell(start);
 
+        const isCastling = piece?.getType() == "king" && Math.abs(destination % BOARD_SIZE - start % BOARD_SIZE) > 1;
+
         if (piece) {
             board.setValueToCell(piece.getPosition(), null);
+        }
+
+        if (isCastling) {
+            const isKingside = destination > start;
+            const rookPos = isKingside ? destination + 1 : destination - 2;
+            const rook = board.getValueFromCell(rookPos)!;
+            board.setValueToCell(isKingside ? destination - 1 : destination + 1, rook);
+            board.setValueToCell(rookPos, null);
         }
 
         const opponent = board.setValueToCell(destination, piece);
@@ -54,36 +61,18 @@ class Game {
             return false;
         }
 
-        this.moves.push([start, destination])
+        if (isCastling) {
+            const rangeEnd = start > destination ? destination - 3 : destination + 2;
+            board.moves.push(range(start, rangeEnd));
+        } else {
+            board.moves.push([start, destination])
+        }
 
         return true;
     }
 
     endTurn() {
         this.setPlayer(this.player === EPlayer.White ? EPlayer.Black : EPlayer.White);
-    }
-
-   private isCastlingPossible(board: Board, type: "king" | "queen") {
-        const kingStartingPosition = this.player == EPlayer.White ? 60 : 4;
-        const didKingMove = Boolean(this.moves.find(move => move.includes(kingStartingPosition)));
-
-        if (type === "king") {
-            return isCastlingValid(kingStartingPosition + 3, this.moves, 1);
-        } else {
-            return isCastlingValid(kingStartingPosition - 4, this.moves, -1);
-        }
-
-        function isCastlingValid(rookPos: number, moves: number[][], direction: number) {
-            const didRookMove = Boolean(moves.find(move => move.includes(rookPos)));
-
-            if (didKingMove || didRookMove) {
-                return false;
-            }
-
-            const king = board.getValueFromCell(kingStartingPosition)!;
-
-            return king._getHorizontalMoves(board, direction).includes(rookPos - direction);
-        }
     }
 
     getAllMoves(board: Board) {
